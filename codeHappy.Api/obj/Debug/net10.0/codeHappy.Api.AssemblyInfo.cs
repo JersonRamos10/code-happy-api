@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("codeHappy.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+055e21203afec1ed03b22b6d95fd504548a15edb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0b7ccad737f92ddab573e9763c2d93cda2e98954")]
 [assembly: System.Reflection.AssemblyProductAttribute("codeHappy.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("codeHappy.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
