@@ -3,3 +3,9 @@
 .idea/
 bin/
 obj/
+
+#Secrets y configuraciones local
+*.user
+*.env
+.env
+
