@@ -1,6 +1,6 @@
 namespace codeHappy.Data.Enums;
 
-public enum Visibility
+public enum SnippetVisibility
 {
     Private,
     Shared,

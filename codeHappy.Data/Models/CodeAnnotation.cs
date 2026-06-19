@@ -1,6 +1,6 @@
 namespace codeHappy.Data.Models;
 
-public class Annotation
+public class CodeAnnotation
 {
     public string Id { get; set; } = Guid.NewGuid().ToString();
 

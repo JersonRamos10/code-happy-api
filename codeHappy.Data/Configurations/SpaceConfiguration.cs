@@ -18,7 +18,7 @@ public class SpaceConfiguration : IEntityTypeConfiguration<Space>
         builder.Property(s => s.CreatedAt)
             .HasDefaultValueSql("now()");
 
-        builder.Property(s => s.UpdateAt)
+        builder.Property(s => s.UpdatedAt)
             .HasDefaultValueSql("now()");
 
 

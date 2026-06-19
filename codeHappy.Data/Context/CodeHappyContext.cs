@@ -20,11 +20,11 @@ public class CodeHappyContext : DbContext
 
     public DbSet<Share> Shares { get; set; }
 
+    public DbSet<Block> Blocks { get; set; }
     public CodeHappyContext(DbContextOptions<CodeHappyContext> options) : base(options)
     {
 
     }
-
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

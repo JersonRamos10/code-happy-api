@@ -10,7 +10,7 @@ public class Snippet
 
     public string? Description { get; set; }
 
-    public required Visibility Visibility { get; set; }
+    public required SnippetVisibility Visibility { get; set; }
 
     public bool IsFavorite { get; set; }
 
@@ -22,7 +22,7 @@ public class Snippet
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public DateTime UpdateAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
 
     //Relacionchips

@@ -27,7 +27,7 @@ public class ProfileConfiguration : IEntityTypeConfiguration<Profile>
         builder.Property(P => P.CreatedAt)
             .HasDefaultValueSql("now()");
 
-        builder.Property(p => p.UpdateAt)
+        builder.Property(p => p.UpdatedAt)
             .HasDefaultValueSql("now()");
 
         //Index
@@ -53,7 +53,7 @@ public class ProfileConfiguration : IEntityTypeConfiguration<Profile>
         //Relacionchip 1:N with Shares
 
         builder.HasMany(p => p.Shares)
-            .WithOne(s => s.profile)
+            .WithOne(s => s.Profile)
             .HasForeignKey(ps => ps.SharedBy);
     }
 
