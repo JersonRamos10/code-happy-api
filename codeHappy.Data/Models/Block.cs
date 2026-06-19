@@ -1,4 +1,3 @@
-using System.Data.Common;
 using codeHappy.Data.Enums;
 
 namespace codeHappy.Data.Models;
@@ -17,13 +16,13 @@ public class Block
 
     public int Position { get; set; }
 
-    public List<Annotation> Annotaions { get; set; } = [];
+    public List<CodeAnnotation> Annotations { get; set; } = [];
 
     public ImageMetadata? ImageMetadata { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public DateTime UpdateAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     //relacionchips
 

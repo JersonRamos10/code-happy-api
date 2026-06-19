@@ -1,6 +1,3 @@
-using System.Net.Http.Headers;
-using Microsoft.EntityFrameworkCore.Update.Internal;
-
 namespace codeHappy.Data.Models;
 
 public class Group
@@ -13,7 +10,7 @@ public class Group
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public DateTime UpdateAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
 
     //Relacionchips
