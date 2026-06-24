@@ -28,8 +28,7 @@ public class CodeHappyContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProfileConfiguration).Assembly);
-
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(CodeHappyContext).Assembly);
     }
 
 
