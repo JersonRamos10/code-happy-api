@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using codeHappy.Data.Context;
@@ -13,9 +14,11 @@ using codeHappy.Data.Models;
 namespace codeHappy.Data.Migrations
 {
     [DbContext(typeof(CodeHappyContext))]
-    partial class CodeHappyContextModelSnapshot : ModelSnapshot
+    [Migration("20260625181210_AdjustCascadeDeleteBehaviors")]
+    partial class AdjustCascadeDeleteBehaviors
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
