@@ -1,6 +1,6 @@
 @codeHappy.Api_HostAddress = http://localhost:5104
 
-GET {{codeHappy.Api_HostAddress}}/weatherforecast/
+GET {{codeHappy.Api_HostAddress}}/auth/sync
 Accept: application/json
 
 ###
