@@ -12,21 +12,13 @@ public class Group
 
     public DateTime UpdatedAt { get; set; }
 
-
     //Relacionchips
-
-    //N:1 with profile
-
-    public Guid OwnerId { get; set; }
-
-    public Profile Profile { get; set; } = null!;
 
     //N:1 with spaces
 
     public Guid SpaceId { get; set; }
 
     public Space Space { get; set; } = null!;
-
 
     //1:N with snippets
 

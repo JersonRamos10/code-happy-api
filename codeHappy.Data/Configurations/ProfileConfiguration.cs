@@ -37,24 +37,28 @@ public class ProfileConfiguration : IEntityTypeConfiguration<Profile>
         //Relacionchip 1:N with Snippets
         builder.HasMany(p => p.Snippets)
             .WithOne(s => s.Profile)
-            .HasForeignKey(ps => ps.OwnerId);
+            .HasForeignKey(ps => ps.OwnerId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         //Relacionchip 1:N with Spaces
         builder.HasMany(p => p.Spaces)
             .WithOne(s => s.Profile)
-            .HasForeignKey(s => s.OwnerId);
+            .HasForeignKey(s => s.OwnerId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         //Relacionchip 1:N with Comments
 
         builder.HasMany(p => p.Comments)
             .WithOne(c => c.Profile)
-            .HasForeignKey(pc => pc.OwnerId);
+            .HasForeignKey(pc => pc.OwnerId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         //Relacionchip 1:N with Shares
 
         builder.HasMany(p => p.Shares)
             .WithOne(s => s.Profile)
-            .HasForeignKey(ps => ps.SharedBy);
+            .HasForeignKey(ps => ps.SharedBy)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
 }

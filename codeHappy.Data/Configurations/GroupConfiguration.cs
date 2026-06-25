@@ -17,9 +17,6 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.Property(g => g.Position)
-            .IsRequired();
-
         builder.Property(g => g.CreatedAt)
           .HasDefaultValueSql("now()");
 
@@ -29,21 +26,21 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
         //Index
         builder.HasIndex(g => new { g.SpaceId, g.Position });
 
+        //Constraints
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint(
+                "CK_Group_Position",
+                "\"Position\" >= 0");
+        });
 
         //Relacionchip 1:N with Snippets
 
         builder.HasMany(s => s.Snippets)
                .WithOne(g => g.Group)
                .HasForeignKey(gs => gs.GroupId)
-               .OnDelete(DeleteBehavior.Restrict);
+               .OnDelete(DeleteBehavior.SetNull);
         ;
-
-        //Relacionchip N:1 with profile
-
-        builder.HasOne(g => g.Profile)
-                .WithMany()
-                .HasForeignKey(gp => gp.OwnerId);
-
 
     }
 
