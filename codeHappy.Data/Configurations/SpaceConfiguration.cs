@@ -33,13 +33,13 @@ public class SpaceConfiguration : IEntityTypeConfiguration<Space>
         builder.HasMany(s => s.Groups)
             .WithOne(g => g.Space)
             .HasForeignKey(sg => sg.SpaceId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         //Relacionchip 1:N with Snippets
         builder.HasMany(s => s.Snippets)
            .WithOne(sn => sn.Space)
            .HasForeignKey(sn => sn.SpaceId)
-           .OnDelete(DeleteBehavior.Restrict);
+           .OnDelete(DeleteBehavior.SetNull);
 
     }
 }

@@ -27,6 +27,8 @@ public class CommentConfiguration : IEntityTypeConfiguration<Comment>
         builder.Property(c => c.UpdatedAt)
             .HasDefaultValueSql("now()");
 
+
+        //index
         builder.HasIndex(c => c.SnippetId);
         builder.HasIndex(c => new { c.SnippetId, c.CreatedAt });
     }

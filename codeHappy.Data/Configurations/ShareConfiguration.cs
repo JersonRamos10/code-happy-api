@@ -28,6 +28,7 @@ public class ShareConfiguration : IEntityTypeConfiguration<Share>
         builder.Property(s => s.UpdatedAt)
             .HasDefaultValueSql("now()");
 
+        //index
         builder.HasIndex(s => s.SnippetId);
         builder.HasIndex(s => s.SharedBy);
         builder.HasIndex(s => new { s.SnippetId, s.SharedWith });

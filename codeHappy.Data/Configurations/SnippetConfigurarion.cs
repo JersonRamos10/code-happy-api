@@ -49,16 +49,19 @@ public class SnippetConfiguration : IEntityTypeConfiguration<Snippet>
         //Relacionchip 1:N with Blocks
         builder.HasMany(s => s.Blocks)
                .WithOne(b => b.Snippet)
-               .HasForeignKey(sb => sb.SnippetId);
+               .HasForeignKey(sb => sb.SnippetId)
+               .OnDelete(DeleteBehavior.Cascade);
 
         //Relacionchip 1:N with Snippets
         builder.HasMany(s => s.Comments)
                .WithOne(c => c.Snippet)
-               .HasForeignKey(sc => sc.SnippetId);
+               .HasForeignKey(sc => sc.SnippetId)
+               .OnDelete(DeleteBehavior.Cascade);
 
         //Relacionchip 1:N with Shares
         builder.HasMany(s => s.Shares)
             .WithOne(sh => sh.Snippet)
-            .HasForeignKey(sh => sh.SnippetId);
+            .HasForeignKey(sh => sh.SnippetId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
