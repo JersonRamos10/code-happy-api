@@ -1,5 +1,6 @@
 using System.Security.Claims;
-using codeHappy.Api.Dtos;
+using codeHappy.Business.Dtos;
+using codeHappy.Business.Interfaces;
 using codeHappy.Data.Context;
 using codeHappy.Data.Models;
 
@@ -11,38 +12,27 @@ public static class AuthEndpoints
     {
         var group = app.MapGroup("/auth").RequireAuthorization();
 
-        group.MapPost("/sync", async (HttpContext context, CodeHappyContext db) =>
+
+        group.MapPost("/sync", async (HttpContext context, IProfileService profileService) =>
         {
+            // Extrae los claims del JWT emitido por Supabase
             var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
             var email = context.User.FindFirstValue(ClaimTypes.Email);
+            var userName = context.User.FindFirstValue(ClaimTypes.Name);
+            var displayName = context.User.FindFirstValue("display_name");
 
-            if (string.IsNullOrEmpty(userId))
+
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(email)
+                || string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(displayName))
                 return Results.Unauthorized();
 
             var guidUserId = Guid.Parse(userId);
 
-            var profile = await db.Profiles.FindAsync(guidUserId);
+            await profileService.SyncProfileAsync(guidUserId, email, userName, displayName);
 
-            if (profile == null)
-            {
-                profile = new Profile
-                {
-                    Id = guidUserId,
-                    UserName = $"user_{guidUserId.ToString().Substring(0, 8)}",
-                    Email = email ?? "",
-                    DisplayName = context.User.FindFirstValue(ClaimTypes.Name) ?? "Nuevo Usuario"
-                };
+            var profile = await profileService.GetUserbyIdAsync(guidUserId);
 
-                db.Profiles.Add(profile);
-                await db.SaveChangesAsync();
-            }
-
-            return Results.Ok(new UserProfileResponse(
-                profile.Id,
-                profile.UserName,
-                profile.Email,
-                profile.AvatarUrl
-            ));
+            return Results.Ok(profile);
         });
     }
 }

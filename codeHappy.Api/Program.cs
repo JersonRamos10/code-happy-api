@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using codeHappy.Api.Extensions;
 using codeHappy.Api.Endpoints;
 using System.IdentityModel.Tokens.Jwt;
+using codeHappy.Business.Interfaces;
+using codeHappy.Business.Services;
+using codeHappy.Api.Middlewares;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
@@ -15,6 +18,13 @@ var connectionString = builder.Configuration.GetConnectionString("SupabaseConnec
 
 builder.Services.AddDbContext<CodeHappyContext>(options =>
                  options.UseNpgsql(connectionString));
+
+
+//Services
+builder.Services.AddScoped<IProfileService, ProfileService>();
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 
 //COnfig of Authentication JWT
@@ -31,6 +41,8 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.UseExceptionHandler();
 
 
 app.UseAuthentication();
