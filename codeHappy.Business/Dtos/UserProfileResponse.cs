@@ -1,4 +1,4 @@
-namespace codeHappy.Api.Dtos
+namespace codeHappy.Business.Dtos
 {
     public record UserProfileResponse(
 

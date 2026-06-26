@@ -9,3 +9,6 @@ obj/
 *.env
 .env
 
+CLAUDE.md
+docs/
+.claude
