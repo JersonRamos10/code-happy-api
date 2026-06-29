@@ -6,6 +6,8 @@ using System.IdentityModel.Tokens.Jwt;
 using codeHappy.Business.Interfaces;
 using codeHappy.Business.Services;
 using codeHappy.Api.Middlewares;
+using codeHappy.Api.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
@@ -25,6 +27,9 @@ builder.Services.AddScoped<IProfileService, ProfileService>();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 
 //COnfig of Authentication JWT
