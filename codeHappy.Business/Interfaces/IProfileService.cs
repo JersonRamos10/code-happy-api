@@ -1,4 +1,4 @@
-using codeHappy.Business.Dtos;
+using codeHappy.Business.Dtos.Profile;
 
 namespace codeHappy.Business.Interfaces;
 

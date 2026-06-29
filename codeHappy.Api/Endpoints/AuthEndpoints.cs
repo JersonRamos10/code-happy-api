@@ -13,9 +13,9 @@ public static class AuthEndpoints
         var group = app.MapGroup("/auth").RequireAuthorization();
 
 
+        // POST /auth/sync — syncs the Supabase JWT claims into the local profiles table. Creates the profile if it doesn't exist.
         group.MapPost("/sync", async (ICurrentUserService current, IProfileService profileService) =>
         {
-            // Extrae los claims del JWT emitido por Supabase
             var userId = current.GetUserId();
             var email = current.GetEmail();
             var userName = current.GetUserName();
