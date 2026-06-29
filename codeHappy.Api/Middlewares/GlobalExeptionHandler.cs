@@ -13,7 +13,8 @@ public class GlobalExceptionHandler : IExceptionHandler
     {
         var statusCode = exception switch
         {
-            ProfileNotFoundExeption => StatusCodes.Status404NotFound,
+            NotFoundException => StatusCodes.Status404NotFound,
+            ForbiddenException => StatusCodes.Status403Forbidden,
             _ => StatusCodes.Status500InternalServerError
         };
 

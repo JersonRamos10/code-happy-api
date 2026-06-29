@@ -7,6 +7,7 @@ using codeHappy.Business.Interfaces;
 using codeHappy.Business.Services;
 using codeHappy.Api.Middlewares;
 using codeHappy.Api.Services;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,8 @@ builder.Services.AddDbContext<CodeHappyContext>(options =>
 
 //Services
 builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<ISpaceService, SpaceService>();
+builder.Services.AddValidatorsFromAssemblyContaining<SpaceService>();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -54,6 +57,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapAuthEndpoints();
+app.MapSpaceEndpoints();
 
 app.Run();
 

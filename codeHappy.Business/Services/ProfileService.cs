@@ -1,13 +1,9 @@
-using System.Runtime.CompilerServices;
-
 using Microsoft.EntityFrameworkCore;
-using codeHappy.Business.Dtos;
+using codeHappy.Business.Dtos.Profile;
 using codeHappy.Business.Interfaces;
 using codeHappy.Data.Context;
 using codeHappy.Data.Models;
 using codeHappy.Business.Exceptions;
-using System.Net.Http.Headers;
-using System.Security;
 
 namespace codeHappy.Business.Services;
 
@@ -22,7 +18,7 @@ public class ProfileService : IProfileService
     public async Task<UserProfileResponse> GetUserbyIdAsync(Guid userId)
     {
         var profile = await _context.Profiles.FirstOrDefaultAsync(p => p.Id == userId)
-                ?? throw new ProfileNotFoundExeption($"Profile {userId} not found");
+                ?? throw new NotFoundException("Profile", userId);
 
         return new UserProfileResponse(
             profile.Id,
