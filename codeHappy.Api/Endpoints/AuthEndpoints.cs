@@ -13,13 +13,13 @@ public static class AuthEndpoints
         var group = app.MapGroup("/auth").RequireAuthorization();
 
 
-        group.MapPost("/sync", async (HttpContext context, IProfileService profileService) =>
+        group.MapPost("/sync", async (ICurrentUserService current, IProfileService profileService) =>
         {
             // Extrae los claims del JWT emitido por Supabase
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var email = context.User.FindFirstValue(ClaimTypes.Email);
-            var userName = context.User.FindFirstValue(ClaimTypes.Name);
-            var displayName = context.User.FindFirstValue("display_name");
+            var userId = current.GetUserId();
+            var email = current.GetEmail();
+            var userName = current.GetUserName();
+            var displayName = current.GetDisplayName();
 
 
             if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(email)
