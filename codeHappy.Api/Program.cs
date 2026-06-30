@@ -26,6 +26,8 @@ builder.Services.AddDbContext<CodeHappyContext>(options =>
 //Services
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<ISpaceService, SpaceService>();
+builder.Services.AddScoped<IGroupService, GroupService>();
+
 builder.Services.AddValidatorsFromAssemblyContaining<SpaceService>();
 
 builder.Services.AddProblemDetails();
@@ -58,6 +60,7 @@ app.UseAuthorization();
 
 app.MapAuthEndpoints();
 app.MapSpaceEndpoints();
+app.MapGroupEndpoints();
 
 app.Run();
 

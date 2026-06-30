@@ -84,7 +84,7 @@ public class SpaceService : ISpaceService
     }
 
 
-    private SpaceResponse MapToResponse(Space space)
+    private static SpaceResponse MapToResponse(Space space)
     {
         return new SpaceResponse(
             space.Id,

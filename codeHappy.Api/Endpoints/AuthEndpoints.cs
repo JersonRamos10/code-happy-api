@@ -3,6 +3,7 @@ using codeHappy.Business.Dtos;
 using codeHappy.Business.Interfaces;
 using codeHappy.Data.Context;
 using codeHappy.Data.Models;
+using FluentValidation.AspNetCore;
 
 namespace codeHappy.Api.Endpoints;
 
