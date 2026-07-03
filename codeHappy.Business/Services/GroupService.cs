@@ -1,6 +1,6 @@
 
 using Microsoft.EntityFrameworkCore;
-using codeHappy.Business.Dtos.Group;
+using codeHappy.Business.Dtos.Groups;
 using codeHappy.Business.Exceptions;
 using codeHappy.Business.Interfaces;
 using codeHappy.Data.Context;

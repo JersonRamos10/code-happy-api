@@ -1,4 +1,4 @@
-using codeHappy.Business.Dtos.Group;
+using codeHappy.Business.Dtos.Groups;
 using codeHappy.Business.Interfaces;
 
 namespace codeHappy.Api.Endpoints;

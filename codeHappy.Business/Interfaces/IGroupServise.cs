@@ -1,6 +1,6 @@
 
 
-using codeHappy.Business.Dtos.Group;
+using codeHappy.Business.Dtos.Groups;
 
 namespace codeHappy.Business.Interfaces;
 
