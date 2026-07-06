@@ -1,4 +1,4 @@
-namespace codeHappy.Business.Dtos.Group;
+namespace codeHappy.Business.Dtos.Groups;
 
 public record GroupResponse(
     Guid Id,

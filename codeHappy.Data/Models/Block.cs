@@ -28,7 +28,7 @@ public class Block
 
     //N:1 with snippets
 
-    public required Guid SnippetId { get; set; }
+    public Guid SnippetId { get; set; }
 
     public Snippet Snippet { get; set; } = null!;
 

@@ -8,11 +8,13 @@ public class CreateSpaceRequestValidator : AbstractValidator<CreateSpaceRequest>
     public CreateSpaceRequestValidator()
     {
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("El nombre del space es obligatorio.")
+            .NotEmpty()
+            .WithMessage("Name to space is required")
             .MaximumLength(50).WithMessage("El nombre no puede superar 50 caracteres.");
 
         RuleFor(x => x.Icon)
-            .MaximumLength(30).WithMessage("El icon no puede superar 30 caracteres.")
+            .MaximumLength(30)
+            .WithMessage("El icon no puede superar 30 caracteres.")
             .When(x => x.Icon != null);
     }
 }

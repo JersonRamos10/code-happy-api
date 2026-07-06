@@ -8,6 +8,7 @@ using codeHappy.Business.Services;
 using codeHappy.Api.Middlewares;
 using codeHappy.Api.Services;
 using FluentValidation;
+using Microsoft.AspNetCore.Components.RenderTree;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,8 +28,10 @@ builder.Services.AddDbContext<CodeHappyContext>(options =>
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<ISpaceService, SpaceService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<ISnippetService, SnippetService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<SpaceService>();
+builder.Services.AddValidatorsFromAssemblyContaining<SnippetService>();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -61,6 +64,7 @@ app.UseAuthorization();
 app.MapAuthEndpoints();
 app.MapSpaceEndpoints();
 app.MapGroupEndpoints();
+app.MapSnippetEndpoints();
 
 app.Run();
 

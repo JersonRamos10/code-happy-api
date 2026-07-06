@@ -33,7 +33,7 @@ public class ProfileService : IProfileService
     {
         var profileExist = await _context.Profiles.FindAsync(userId);
 
-        if (profileExist == null)
+        if (profileExist is null)
         {
             var profile = new Profile
             {
