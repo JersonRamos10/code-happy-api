@@ -1,4 +1,3 @@
-using System.Data;
 using codeHappy.Business.Dtos.Blocks;
 using codeHappy.Data.Enums;
 using FluentValidation;
@@ -11,10 +10,11 @@ public class CreateBlockRequestValidator : AbstractValidator<CreateBlocksRequest
     {
         RuleFor(b => b.Content)
                 .NotEmpty()
-                .WithMessage("");
+                .WithMessage("Block content is required");
 
-        RuleFor(b => b.Type)
+        RuleFor(b => b.Language)
             .NotEmpty()
+            .WithMessage("Language is required for code blocks")
             .When(b => b.Type == BlockType.Code);
     }
 }

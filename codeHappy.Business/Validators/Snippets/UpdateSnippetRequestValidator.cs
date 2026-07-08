@@ -4,9 +4,9 @@ using FluentValidation;
 
 namespace codeHappy.Business.Validators.Snippets;
 
-public class CreateSnippetRequestValidator : AbstractValidator<CreateSnippetRequest>
+public class UpdateSnippetRequestValidator : AbstractValidator<UpdateSnippetRequest>
 {
-    public CreateSnippetRequestValidator()
+    public UpdateSnippetRequestValidator()
     {
         RuleFor(s => s.Title)
                 .NotEmpty()
@@ -21,5 +21,4 @@ public class CreateSnippetRequestValidator : AbstractValidator<CreateSnippetRequ
         RuleForEach(s => s.Blocks)
                 .SetValidator(new CreateBlockRequestValidator());
     }
-
 }
