@@ -1,5 +1,6 @@
 using codeHappy.Business.Dtos.Snippet;
 using codeHappy.Business.Interfaces;
+using FluentValidation;
 
 namespace codeHappy.Api.Endpoints;
 
@@ -40,9 +41,15 @@ public static class SnippetEndpoints
 
         groups.MapPost("/", async (
             CreateSnippetRequest request,
+            IValidator<CreateSnippetRequest> validator,
             ISnippetService service,
             ICurrentUserService current) =>
         {
+            var result = await validator.ValidateAsync(request);
+
+            if (!result.IsValid)
+                return Results.ValidationProblem(result.ToDictionary());
+
             var userId = current.GetUserId();
 
             if (userId is null)
@@ -56,9 +63,15 @@ public static class SnippetEndpoints
         groups.MapPut("/{id}", async (
             string id,
             UpdateSnippetRequest request,
+            IValidator<UpdateSnippetRequest> validator,
             ISnippetService service,
             ICurrentUserService current) =>
         {
+            var result = await validator.ValidateAsync(request);
+
+            if (!result.IsValid)
+                return Results.ValidationProblem(result.ToDictionary());
+
             var userId = current.GetUserId();
 
             if (userId is null)
