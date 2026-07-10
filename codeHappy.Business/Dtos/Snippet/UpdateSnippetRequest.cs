@@ -7,7 +7,7 @@ public record UpdateSnippetRequest(
     string Title,
     string? Description,
     SnippetVisibility Visibility,
-    List<CreateBlocksRequest> Blocks,
+    List<CreateBlockRequest> Blocks,
     Guid? SpaceId,
     Guid? GroupId,
     string? Topics

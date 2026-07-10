@@ -4,16 +4,12 @@ using codeHappy.Data.Models;
 
 namespace codeHappy.Business.Dtos.Blocks;
 
-public record BlocksResponse(
-    Guid Id,
+public record CreateBlockRequest(
     string? Title,
     string Content,
-    string? Lenguaje,
     BlockType Type,
-    DateTime CreatedAt,
-    DateTime UpdateAt,
+    string? Language,
     List<CodeAnnotation>? Annotations,
-    int Position,
     int? Width,
     int? Height,
     string? Alt,
