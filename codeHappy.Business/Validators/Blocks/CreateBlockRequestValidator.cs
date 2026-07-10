@@ -4,7 +4,7 @@ using FluentValidation;
 
 namespace codeHappy.Business.Validators.Blocks;
 
-public class CreateBlockRequestValidator : AbstractValidator<CreateBlocksRequest>
+public class CreateBlockRequestValidator : AbstractValidator<CreateBlockRequest>
 {
     public CreateBlockRequestValidator()
     {
