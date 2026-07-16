@@ -8,7 +8,6 @@ using codeHappy.Business.Services;
 using codeHappy.Api.Middlewares;
 using codeHappy.Api.Services;
 using FluentValidation;
-using Microsoft.AspNetCore.Components.RenderTree;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +20,7 @@ var connectionString = builder.Configuration.GetConnectionString("SupabaseConnec
 
 
 builder.Services.AddDbContext<CodeHappyContext>(options =>
-                 options.UseNpgsql(connectionString));
+                options.UseNpgsql(connectionString));
 
 
 //Services
@@ -29,6 +28,7 @@ builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<ISpaceService, SpaceService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
 builder.Services.AddScoped<ISnippetService, SnippetService>();
+builder.Services.AddScoped<IBlocksService, BlockService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<SpaceService>();
 builder.Services.AddValidatorsFromAssemblyContaining<SnippetService>();
@@ -65,6 +65,7 @@ app.MapAuthEndpoints();
 app.MapSpaceEndpoints();
 app.MapGroupEndpoints();
 app.MapSnippetEndpoints();
+app.MapBlockEndpoints();
 
 app.Run();
 

@@ -1,21 +1,17 @@
 using codeHappy.Data.Enums;
 using codeHappy.Data.Models;
 
-
 namespace codeHappy.Business.Dtos.Blocks;
 
 public record BlocksResponse(
     Guid Id,
     string? Title,
     string Content,
-    string? Lenguaje,
+    string? Language,
     BlockType Type,
-    DateTime CreatedAt,
-    DateTime UpdateAt,
-    List<CodeAnnotation>? Annotations,
+    List<AnnotationResponse>? Annotations,
     int Position,
-    int? Width,
-    int? Height,
-    string? Alt,
-    string? BucketPath
+    ImageMetadataResponse? ImageMetadata,
+    DateTime CreatedAt,
+    DateTime UpdateAt
 );
