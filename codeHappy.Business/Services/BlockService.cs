@@ -3,48 +3,38 @@ using codeHappy.Business.Exceptions;
 using codeHappy.Business.Interfaces;
 using codeHappy.Data.Context;
 using codeHappy.Data.Models;
-using CodeHappy.Business.Dtos.Blocks;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 
 namespace codeHappy.Business.Services
 {
     public class BlockService : IBlocksService
     {
-
         private readonly CodeHappyContext _context;
 
         public BlockService(CodeHappyContext context)
         {
             _context = context;
         }
-
         public async Task<BlocksResponse> CreateBlockAsync(Guid userId, Guid snippetId, CreateBlockRequest request)
         {
             var snippet = await _context.Snippets
                     .FindAsync(snippetId)
-                    ?? throw new Exception("Snippet not found");
+                    ?? throw new NotFoundException("Snippet", snippetId);
 
             if( snippet.OwnerId != userId )
                 throw new ForbiddenException();
 
             var block = new Block
             {
+                SnippetId =  snippetId,
                 Title = request.Title,
                 Content = request.Content,
                 Type = request.Type,
+                Position = request.Position,
                 Language = request.Language,
-                Annotations = request.Annotations ?? new List<CodeAnnotation>(),
-                ImageMetadata = request.Width.HasValue && request.Height.HasValue ? new ImageMetadata
-                {
-                    Width = request.Width.Value,
-                    Height = request.Height.Value,
-                    Alt = request.Alt,
-                    BucketPath = request.BucketPath
-                } : null,
-
+                Annotations = request.Annotations is null ? []
+                    : request.Annotations.Select(a => MapToCodeAnnotation(a)).ToList() 
             };
 
             await _context.AddAsync(block);
@@ -53,24 +43,69 @@ namespace codeHappy.Business.Services
             return MapToBlocksResponse(block);
         }
 
-        public Task DeleteBlock(Guid UserId, Guid snippetId, Guid blockId)
+        public async Task DeleteBlock(Guid UserId, Guid snippetId, Guid blockId)
         {
-            throw new NotImplementedException();
+            var snippet = await _context.Snippets
+                              .Include(s => s.Blocks)
+                              .FirstOrDefaultAsync(s => s.Id == snippetId)
+                              ?? throw new NotFoundException("Snippet", snippetId);
+
+            if(snippet.OwnerId != UserId)
+                throw new ForbiddenException();
+            
+            var block = await _context.Blocks
+                  .FirstOrDefaultAsync(b => b.Id == blockId && b.SnippetId == snippetId) 
+                        ?? throw new NotFoundException("Block", blockId); 
+           
+            _context.Remove(block);
+            
+            await _context.SaveChangesAsync();
+
         }
 
-        public Task reorderBlocks(Guid UserId, Guid snippetId, List<Guid> blockIds)
+        public async Task ReorderBlocks(Guid UserId, Guid snippetId, List<ReorderBlockRequest> reorderBlocks)
         {
-            throw new NotImplementedException();
+            var snippet = await _context.Snippets
+                              .Include(s => s.Blocks)
+                              .FirstOrDefaultAsync(s => s.Id == snippetId) 
+                              ?? throw new NotFoundException("Snippet", snippetId);
+
+            if(snippet.OwnerId != UserId)
+                throw new ForbiddenException();
+            
+    
+            foreach (var item in reorderBlocks)
+            {
+                var b = snippet.Blocks
+                            .FirstOrDefault(b => b.Id == item.Id) 
+                             ?? throw new NotFoundException("Block", item.Id);
+               
+                b.Position = item.Position;
+            }
+            
+            await _context.SaveChangesAsync();  
         }
 
-        public Task UpdateBlockAnnotations(Guid UserId, Guid snippetId, Guid blockId, BlockAnnotationsRequest request)
+        public async Task UpdateBlockAnnotations(Guid UserId, Guid snippetId, Guid blockId, List<CreateAnnotationRequest>? request)
         {
-            throw new NotImplementedException();
+            var snippet = await _context.Snippets.FindAsync(snippetId)       
+                        ?? throw new NotFoundException("Snippet", snippetId);        
+
+            if (snippet.OwnerId != UserId)                                   
+                throw new ForbiddenException();                              
+
+            var block = await _context.Blocks                                
+                            .FirstOrDefaultAsync(b => b.Id == blockId && b.SnippetId ==  
+                                snippetId) ?? throw new NotFoundException("Block", blockId);
+            
+            block.Annotations = request is null ? [] : request.Select(a => MapToCodeAnnotation(a)).ToList();
+
+            await _context.SaveChangesAsync();
         }
 
         public async Task UpdateBlockContentAsync(Guid userId, Guid snippetId, Guid blockId, UpdateBlockRequest request)
         {
-          
+        
             var snippet = await _context.Snippets.FindAsync(snippetId)
                 ?? throw new NotFoundException("Snippet", snippetId);
 
@@ -79,7 +114,7 @@ namespace codeHappy.Business.Services
 
             var block = await _context.Blocks
                 .FirstOrDefaultAsync(b => b.Id == blockId && b.SnippetId == snippetId)
-                 ?? throw new NotFoundException("Block", blockId);
+                ?? throw new NotFoundException("Block", blockId);
 
             block.Title = request.Title ?? block.Title;
             block.Content = request.Content ?? block.Content;
@@ -94,17 +129,45 @@ namespace codeHappy.Business.Services
                 Id: block.Id,
                 Title: block.Title,
                 Content: block.Content,
-                Lenguaje: block.Language,
+                Language: block.Language,
                 Type: block.Type,
+                Annotations: block.Annotations.Select(a => MapToAnnotationResponse(a)).ToList(),
+                Position: block.Position,
                 CreatedAt: block.CreatedAt,
                 UpdateAt: block.UpdatedAt,
-                Annotations: block.Annotations?.ToList(),
-                Position: block.Position,
-                Width: block.ImageMetadata?.Width,
-                Height: block.ImageMetadata?.Height,
-                Alt: block.ImageMetadata?.Alt,
-                BucketPath: block.ImageMetadata?.BucketPath
+                ImageMetadata: block.ImageMetadata is null ? null : MapToImageMetadataResponse(block.ImageMetadata)
             );
         }
+
+        private static AnnotationResponse MapToAnnotationResponse(CodeAnnotation annotation)
+        {
+            return new AnnotationResponse(
+                Id: annotation.Id,
+                LineNumber: annotation.LineNumber,
+                Text: annotation.Text
+                );
+        }
+
+        private static ImageMetadataResponse MapToImageMetadataResponse(ImageMetadata imageMetadata)
+        {
+            return new ImageMetadataResponse(
+                Width: imageMetadata.Width,
+                Height: imageMetadata.Height ,
+                Alt: imageMetadata.Alt ,
+                BucketPath: imageMetadata.BucketPath
+            );
+        }
+
+        private static CodeAnnotation MapToCodeAnnotation (CreateAnnotationRequest request)
+        {
+            return new CodeAnnotation
+            {
+                LineNumber = request.LineNumber,
+                Text = request.Text
+            };
+
+        }
+        
+        
     }
 }

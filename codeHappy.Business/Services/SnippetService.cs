@@ -78,7 +78,7 @@ public class SnippetService(CodeHappyContext context) : ISnippetService
         if (req.IsFavorite.HasValue)
             query = query.Where(s => s.IsFavorite == req.IsFavorite);
 
-        int totalItems = await query.CountAsync();
+        var totalItems = await query.CountAsync();
 
         var items = await query
             .OrderBy(s => s.Title)
@@ -191,11 +191,30 @@ public class SnippetService(CodeHappyContext context) : ISnippetService
             block.Content,
             block.Language,
             block.Type,
+            block.Annotations.Select(a => MapToAnnotationResponse(a)).ToList(),
+            block.Position,
+            ImageMetadata: block.ImageMetadata is null ? null : MapToImageMetadataResponse(block.ImageMetadata),
             block.CreatedAt,
-            block.UpdatedAt,
-            block.Position
+            block.UpdatedAt
         );
     }
-
-   
+    
+    private static AnnotationResponse MapToAnnotationResponse(CodeAnnotation annotation)
+    {
+        return new AnnotationResponse(
+            Id: annotation.Id,
+            LineNumber: annotation.LineNumber,
+            Text: annotation.Text
+        );
+    }
+    
+    private static ImageMetadataResponse MapToImageMetadataResponse(ImageMetadata imageMetadata)
+    {
+        return new ImageMetadataResponse(
+            Width: imageMetadata.Width,
+            Height: imageMetadata.Height ,
+            Alt: imageMetadata.Alt ,
+            BucketPath: imageMetadata.BucketPath
+        );
+    }
 }
