@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using codeHappy.Data.Context;
@@ -13,9 +14,11 @@ using codeHappy.Data.Models;
 namespace codeHappy.Data.Migrations
 {
     [DbContext(typeof(CodeHappyContext))]
-    partial class CodeHappyContextModelSnapshot : ModelSnapshot
+    [Migration("20260722215839_AddImageMetadataFields")]
+    partial class AddImageMetadataFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -215,17 +218,35 @@ namespace codeHappy.Data.Migrations
                     b.Property<DateTime?>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Permission")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Viewer");
+
                     b.Property<Guid>("SharedBy")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("SharedWith")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<Guid>("SnippetId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.HasKey("Id");
 
                     b.HasIndex("SharedBy");
 
                     b.HasIndex("SnippetId");
+
+                    b.HasIndex("SnippetId", "SharedWith");
 
                     b.ToTable("Shares");
                 });
