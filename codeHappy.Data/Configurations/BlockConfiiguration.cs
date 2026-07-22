@@ -40,8 +40,15 @@ public class BlockConfiguration : IEntityTypeConfiguration<Block>
         builder.OwnsOne(b => b.ImageMetadata, owned =>
         {
             owned.ToJson();
+            owned.Property(im => im.PublicId)
+                .HasMaxLength(500);
+            owned.Property(im => im.SecureUrl)
+                .HasMaxLength(1000);
             owned.Property(im => im.Width);
             owned.Property(im => im.Height);
+            owned.Property(im => im.Format)
+                .HasMaxLength(20);
+            owned.Property(im => im.Bytes);
             owned.Property(im => im.Alt)
                 .HasMaxLength(200);
             owned.Property(im => im.BucketPath)

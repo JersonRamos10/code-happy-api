@@ -211,9 +211,13 @@ public class SnippetService(CodeHappyContext context) : ISnippetService
     private static ImageMetadataResponse MapToImageMetadataResponse(ImageMetadata imageMetadata)
     {
         return new ImageMetadataResponse(
+            PublicId: imageMetadata.PublicId,
+            SecureUrl: imageMetadata.SecureUrl,
             Width: imageMetadata.Width,
-            Height: imageMetadata.Height ,
-            Alt: imageMetadata.Alt ,
+            Height: imageMetadata.Height,
+            Format: imageMetadata.Format,
+            Bytes: imageMetadata.Bytes,
+            Alt: imageMetadata.Alt,
             BucketPath: imageMetadata.BucketPath
         );
     }

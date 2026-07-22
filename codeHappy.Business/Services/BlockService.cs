@@ -2,6 +2,7 @@
 using codeHappy.Business.Exceptions;
 using codeHappy.Business.Interfaces;
 using codeHappy.Data.Context;
+using codeHappy.Data.Enums;
 using codeHappy.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,7 +35,16 @@ namespace codeHappy.Business.Services
                 Position = request.Position,
                 Language = request.Language,
                 Annotations = request.Annotations is null ? []
-                    : request.Annotations.Select(a => MapToCodeAnnotation(a)).ToList() 
+                    : request.Annotations.Select(a => MapToCodeAnnotation(a)).ToList(),
+                ImageMetadata = request.Type != BlockType.Image ? null : new ImageMetadata
+                {
+                    PublicId = request.PublicId!,
+                    SecureUrl = request.Content,
+                    Width = request.Width,
+                    Height = request.Height,
+                    Format = request.Format,
+                    Bytes = request.Bytes
+                }
             };
 
             await _context.AddAsync(block);
@@ -151,9 +161,13 @@ namespace codeHappy.Business.Services
         private static ImageMetadataResponse MapToImageMetadataResponse(ImageMetadata imageMetadata)
         {
             return new ImageMetadataResponse(
+                PublicId: imageMetadata.PublicId,
+                SecureUrl: imageMetadata.SecureUrl,
                 Width: imageMetadata.Width,
-                Height: imageMetadata.Height ,
-                Alt: imageMetadata.Alt ,
+                Height: imageMetadata.Height,
+                Format: imageMetadata.Format,
+                Bytes: imageMetadata.Bytes,
+                Alt: imageMetadata.Alt,
                 BucketPath: imageMetadata.BucketPath
             );
         }

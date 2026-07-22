@@ -9,5 +9,10 @@ public record CreateBlockRequest(
     BlockType Type,
     int Position,
     string? Language,
+    string? PublicId,
+    int? Width,
+    int? Height,
+    string? Format,
+    long? Bytes,
     List<CreateAnnotationRequest>? Annotations
 );
