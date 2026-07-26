@@ -8,7 +8,7 @@ public static class BlockEndpoints
 {
     public static void MapBlockEndpoints(this WebApplication app)
     {
-        var blocks = app.MapGroup("/snippets/{snippetId}/blocks").RequireAuthorization();
+        var blocks = app.MapGroup("api/snippets/{snippetId}/blocks").RequireAuthorization();
 
         // POST /snippets/{snippetId}/blocks — creates a block.
         blocks.MapPost("/", async (
@@ -123,5 +123,7 @@ public static class BlockEndpoints
 
             return Results.NoContent();
         });
+        
+        
     }
 }

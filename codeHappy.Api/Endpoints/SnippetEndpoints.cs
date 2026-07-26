@@ -9,7 +9,7 @@ public static class SnippetEndpoints
     public static void MapSnippetEndpoints(this WebApplication app)
     {
 
-        var groups = app.MapGroup("/snippets").RequireAuthorization();
+        var groups = app.MapGroup("api/snippets").RequireAuthorization();
 
         groups.MapGet("/", async (
              ISnippetService service,

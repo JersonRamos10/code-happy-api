@@ -1,6 +1,7 @@
 ﻿using codeHappy.Business.Dtos.Blocks;
 using codeHappy.Business.Exceptions;
 using codeHappy.Business.Interfaces;
+using codeHappy.Business.Mappers;
 using codeHappy.Data.Context;
 using codeHappy.Data.Enums;
 using codeHappy.Data.Models;
@@ -12,10 +13,12 @@ namespace codeHappy.Business.Services
     public class BlockService : IBlocksService
     {
         private readonly CodeHappyContext _context;
+        private readonly IImagesService _imagesService;
 
-        public BlockService(CodeHappyContext context)
+        public BlockService(CodeHappyContext context, IImagesService imagesService)
         {
             _context = context;
+            _imagesService = imagesService;
         }
         public async Task<BlocksResponse> CreateBlockAsync(Guid userId, Guid snippetId, CreateBlockRequest request)
         {
@@ -64,13 +67,15 @@ namespace codeHappy.Business.Services
                 throw new ForbiddenException();
             
             var block = await _context.Blocks
-                  .FirstOrDefaultAsync(b => b.Id == blockId && b.SnippetId == snippetId) 
-                        ?? throw new NotFoundException("Block", blockId); 
-           
+                  .FirstOrDefaultAsync(b => b.Id == blockId && b.SnippetId == snippetId)
+                        ?? throw new NotFoundException("Block", blockId);
+
             _context.Remove(block);
-            
+
             await _context.SaveChangesAsync();
 
+            if (block.ImageMetadata is not null)
+                await _imagesService.DestroyAssetBestEffortAsync(block.ImageMetadata.PublicId, CancellationToken.None);
         }
 
         public async Task ReorderBlocks(Guid UserId, Guid snippetId, List<ReorderBlockRequest> reorderBlocks)
@@ -145,7 +150,7 @@ namespace codeHappy.Business.Services
                 Position: block.Position,
                 CreatedAt: block.CreatedAt,
                 UpdateAt: block.UpdatedAt,
-                ImageMetadata: block.ImageMetadata is null ? null : MapToImageMetadataResponse(block.ImageMetadata)
+                ImageMetadata: block.ImageMetadata is null ? null : ImageMetadataMapper.ToResponse(block.ImageMetadata)
             );
         }
 
@@ -157,20 +162,7 @@ namespace codeHappy.Business.Services
                 Text: annotation.Text
                 );
         }
-
-        private static ImageMetadataResponse MapToImageMetadataResponse(ImageMetadata imageMetadata)
-        {
-            return new ImageMetadataResponse(
-                PublicId: imageMetadata.PublicId,
-                SecureUrl: imageMetadata.SecureUrl,
-                Width: imageMetadata.Width,
-                Height: imageMetadata.Height,
-                Format: imageMetadata.Format,
-                Bytes: imageMetadata.Bytes,
-                Alt: imageMetadata.Alt,
-                BucketPath: imageMetadata.BucketPath
-            );
-        }
+        
 
         private static CodeAnnotation MapToCodeAnnotation (CreateAnnotationRequest request)
         {

@@ -8,7 +8,7 @@ public static class SpaceEndpoints
 {
     public static void MapSpaceEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/spaces").RequireAuthorization();
+        var group = app.MapGroup("api/spaces").RequireAuthorization();
 
 
         // POST /spaces — creates a new space. Returns 201 with the created space.

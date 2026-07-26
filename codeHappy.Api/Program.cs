@@ -1,5 +1,7 @@
 using codeHappy.Data.Context;
 using Microsoft.EntityFrameworkCore;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using codeHappy.Api.Extensions;
 using codeHappy.Api.Endpoints;
 using System.IdentityModel.Tokens.Jwt;
@@ -29,6 +31,7 @@ builder.Services.AddScoped<ISpaceService, SpaceService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
 builder.Services.AddScoped<ISnippetService, SnippetService>();
 builder.Services.AddScoped<IBlocksService, BlockService>();
+builder.Services.AddScoped<IImagesService, ImagesService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<SpaceService>();
 builder.Services.AddValidatorsFromAssemblyContaining<SnippetService>();
@@ -40,11 +43,10 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 
-//COnfig of Authentication JWT
+//Config of Authentication JWT
 builder.Services.AddSupabaseAuth(builder.Configuration);
-
+builder.Services.AddCloudinary(builder.Configuration);
 builder.Services.AddAuthorization();
-
 
 
 var app = builder.Build();
@@ -66,6 +68,7 @@ app.MapSpaceEndpoints();
 app.MapGroupEndpoints();
 app.MapSnippetEndpoints();
 app.MapBlockEndpoints();
+app.MapImageEndpoints();
 
 app.Run();
 

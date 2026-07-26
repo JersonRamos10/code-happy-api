@@ -1,6 +1,7 @@
 namespace codeHappy.Data.Models;
 
 public class ImageMetadata
+
 {
     public required string PublicId { get; set; }
 
@@ -18,3 +19,6 @@ public class ImageMetadata
 
     public string? BucketPath { get; set; }
 }
+
+
+

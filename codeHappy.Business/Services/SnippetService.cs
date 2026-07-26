@@ -3,6 +3,7 @@ using codeHappy.Business.Dtos.Pagined;
 using codeHappy.Business.Dtos.Snippet;
 using codeHappy.Business.Exceptions;
 using codeHappy.Business.Interfaces;
+using codeHappy.Business.Mappers;
 using codeHappy.Data.Context;
 using codeHappy.Data.Enums;
 using codeHappy.Data.Models;
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace codeHappy.Business.Services;
 
-public class SnippetService(CodeHappyContext context) : ISnippetService
+public class SnippetService(CodeHappyContext context, IImagesService imagesService) : ISnippetService
 {
     private readonly CodeHappyContext _context = context;
+    private readonly IImagesService _imagesService = imagesService;
 
     // Creates a snippet with its blocks. Verifies the user exists before creating.
     public async Task<SnippetResponse> CreateSnippetAsync(Guid userId, CreateSnippetRequest req)
@@ -36,6 +38,15 @@ public class SnippetService(CodeHappyContext context) : ISnippetService
                 Type = b.Type,
                 Language = b.Language,
                 Position = index,
+                ImageMetadata = b.Type != BlockType.Image ? null : new ImageMetadata
+                {
+                    PublicId = b.PublicId!,
+                    SecureUrl = b.Content,
+                    Width = b.Width,
+                    Height = b.Height,
+                    Format = b.Format,
+                    Bytes = b.Bytes
+                }
             }).ToList(),
         };
 
@@ -49,14 +60,23 @@ public class SnippetService(CodeHappyContext context) : ISnippetService
     public async Task DeleteSnippetbyId(Guid userId, Guid snippetId)
     {
         var snippet = await _context.Snippets
+            .Include(s => s.Blocks)
             .FirstOrDefaultAsync(s => s.Id == snippetId)
             ?? throw new NotFoundException("Snippet", snippetId);
 
         if (snippet.OwnerId != userId)
             throw new ForbiddenException();
 
+        var imagePublicIds = snippet.Blocks
+            .Where(b => b.ImageMetadata is not null)
+            .Select(b => b.ImageMetadata!.PublicId)
+            .ToList();
+
         _context.Remove(snippet);
         await _context.SaveChangesAsync();
+
+        foreach (var publicId in imagePublicIds)
+            await _imagesService.DestroyAssetBestEffortAsync(publicId, CancellationToken.None);
     }
 
     public async Task<PagedResponse<SnippetResponse>> GetAllSnippetAsync(Guid userId, SnippetParamsRequest req)
@@ -133,6 +153,16 @@ public class SnippetService(CodeHappyContext context) : ISnippetService
         snippet.SpaceId = req.SpaceId;
         snippet.UpdatedAt = DateTime.UtcNow;
 
+        var incomingPublicIds = req.Blocks
+            .Where(b => b.Type == BlockType.Image && b.PublicId is not null)
+            .Select(b => b.PublicId!)
+            .ToHashSet();
+
+        var publicIdsToDestroy = snippet.Blocks
+            .Where(b => b.ImageMetadata is not null && !incomingPublicIds.Contains(b.ImageMetadata.PublicId))
+            .Select(b => b.ImageMetadata!.PublicId)
+            .ToList();
+
         _context.Blocks.RemoveRange(snippet.Blocks);
 
         snippet.Blocks = req.Blocks.Select((b, index) => new Block
@@ -142,9 +172,21 @@ public class SnippetService(CodeHappyContext context) : ISnippetService
             Type = b.Type,
             Language = b.Language,
             Position = index,
+            ImageMetadata = b.Type != BlockType.Image ? null : new ImageMetadata
+            {
+                PublicId = b.PublicId!,
+                SecureUrl = b.Content,
+                Width = b.Width,
+                Height = b.Height,
+                Format = b.Format,
+                Bytes = b.Bytes
+            }
         }).ToList();
 
         await _context.SaveChangesAsync();
+
+        foreach (var publicId in publicIdsToDestroy)
+            await _imagesService.DestroyAssetBestEffortAsync(publicId, CancellationToken.None);
     }
     public async Task RecordCopy(Guid snippetId)
     {
@@ -193,7 +235,7 @@ public class SnippetService(CodeHappyContext context) : ISnippetService
             block.Type,
             block.Annotations.Select(a => MapToAnnotationResponse(a)).ToList(),
             block.Position,
-            ImageMetadata: block.ImageMetadata is null ? null : MapToImageMetadataResponse(block.ImageMetadata),
+            ImageMetadata: block.ImageMetadata is null ? null : ImageMetadataMapper.ToResponse(block.ImageMetadata),
             block.CreatedAt,
             block.UpdatedAt
         );
@@ -208,17 +250,4 @@ public class SnippetService(CodeHappyContext context) : ISnippetService
         );
     }
     
-    private static ImageMetadataResponse MapToImageMetadataResponse(ImageMetadata imageMetadata)
-    {
-        return new ImageMetadataResponse(
-            PublicId: imageMetadata.PublicId,
-            SecureUrl: imageMetadata.SecureUrl,
-            Width: imageMetadata.Width,
-            Height: imageMetadata.Height,
-            Format: imageMetadata.Format,
-            Bytes: imageMetadata.Bytes,
-            Alt: imageMetadata.Alt,
-            BucketPath: imageMetadata.BucketPath
-        );
-    }
 }
