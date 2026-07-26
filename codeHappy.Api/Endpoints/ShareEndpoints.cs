@@ -16,11 +16,12 @@ public static class ShareEndpoints
             CreateShareRequest request,
             IValidator<CreateShareRequest> validator,
             IShareService service,
-            ICurrentUserService current) =>
+            ICurrentUserService current,
+            CancellationToken ct) =>
         {
             var normalizedRequest = request with { SnippetId = snippetId };
 
-            var result = await validator.ValidateAsync(normalizedRequest);
+            var result = await validator.ValidateAsync(normalizedRequest, ct);
 
             if (!result.IsValid)
                 return Results.ValidationProblem(result.ToDictionary());
@@ -30,7 +31,7 @@ public static class ShareEndpoints
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            var share = await service.CreateShareAsync(Guid.Parse(userId), normalizedRequest);
+            var share = await service.CreateShareAsync(Guid.Parse(userId), normalizedRequest, ct);
 
             return Results.Created($"/shared/{share.Id}", share);
         });
@@ -40,14 +41,15 @@ public static class ShareEndpoints
         // GET /shares — lists the shares created by the authenticated user.
         shares.MapGet("/", async (
             IShareService service,
-            ICurrentUserService current) =>
+            ICurrentUserService current,
+            CancellationToken ct) =>
         {
             var userId = current.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            var result = await service.GetMySharesAsync(Guid.Parse(userId));
+            var result = await service.GetMySharesAsync(Guid.Parse(userId), ct);
 
             return Results.Ok(result);
         });
@@ -56,14 +58,15 @@ public static class ShareEndpoints
         shares.MapDelete("/{shareId}", async (
             Guid shareId,
             IShareService service,
-            ICurrentUserService current) =>
+            ICurrentUserService current,
+            CancellationToken ct) =>
         {
             var userId = current.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            await service.DeleteShareAsync(Guid.Parse(userId), shareId);
+            await service.DeleteShareAsync(Guid.Parse(userId), shareId, ct);
 
             return Results.NoContent();
         });
@@ -74,9 +77,10 @@ public static class ShareEndpoints
 
         publicShares.MapGet("/{shareId}", async (
             Guid shareId,
-            IShareService service) =>
+            IShareService service,
+            CancellationToken ct) =>
         {
-            var snippet = await service.GetSharedSnippetAsync(shareId);
+            var snippet = await service.GetSharedSnippetAsync(shareId, ct);
 
             return Results.Ok(snippet);
         });

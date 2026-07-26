@@ -15,9 +15,9 @@ public class ProfileService : IProfileService
         _context = context;
     }
     // Busca el perfil por ID. Lanza ProfileNotFoundException si no existe.
-    public async Task<UserProfileResponse> GetUserbyIdAsync(Guid userId)
+    public async Task<UserProfileResponse> GetUserbyIdAsync(Guid userId, CancellationToken ct)
     {
-        var profile = await _context.Profiles.FirstOrDefaultAsync(p => p.Id == userId)
+        var profile = await _context.Profiles.FirstOrDefaultAsync(p => p.Id == userId, ct)
                 ?? throw new NotFoundException("Profile", userId);
 
         return new UserProfileResponse(
@@ -29,9 +29,9 @@ public class ProfileService : IProfileService
     }
 
     // Crea el perfil si no existe (upsert simplificado). Se ejecuta en cada login del usuario.
-    public async Task SyncProfileAsync(Guid userId, string email, string userName, string displayName)
+    public async Task SyncProfileAsync(Guid userId, string email, string userName, string displayName, CancellationToken ct)
     {
-        var profileExist = await _context.Profiles.FindAsync(userId);
+        var profileExist = await _context.Profiles.FindAsync([userId], ct);
 
         if (profileExist is null)
         {
@@ -43,8 +43,8 @@ public class ProfileService : IProfileService
                 DisplayName = displayName,
             };
 
-            await _context.Profiles.AddAsync(profile);
-            await _context.SaveChangesAsync();
+            await _context.Profiles.AddAsync(profile, ct);
+            await _context.SaveChangesAsync(ct);
         }
     }
 }

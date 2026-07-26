@@ -14,14 +14,15 @@ public static class GroupEndpoints
         groups.MapGet("/", async (
             Guid spaceId,
             ICurrentUserService current,
-            IGroupService service) =>
+            IGroupService service,
+            CancellationToken ct) =>
         {
             var userId = current.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            var groups = await service.GetAllGroupsAsync(spaceId, Guid.Parse(userId));
+            var groups = await service.GetAllGroupsAsync(spaceId, Guid.Parse(userId), ct);
 
             return Results.Ok(groups);
         });
@@ -31,14 +32,15 @@ public static class GroupEndpoints
             Guid spaceId,
             CreateGroupRequest request,
             IGroupService service,
-            ICurrentUserService current) =>
+            ICurrentUserService current,
+            CancellationToken ct) =>
         {
             var userId = current.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            var group = await service.CreateGroupAsync(spaceId, Guid.Parse(userId), request.Name);
+            var group = await service.CreateGroupAsync(spaceId, Guid.Parse(userId), request.Name, ct);
 
             return Results.Created($"/spaces/{spaceId}/groups/{group.Id}", group);
         });
@@ -49,14 +51,15 @@ public static class GroupEndpoints
             Guid id,
             UpdateGroupRequest request,
             IGroupService service,
-            ICurrentUserService current) =>
+            ICurrentUserService current,
+            CancellationToken ct) =>
         {
             var userId = current.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            await service.UpdateGroupAsync(id, Guid.Parse(userId), request.Name);
+            await service.UpdateGroupAsync(id, Guid.Parse(userId), request.Name, ct);
 
             return Results.NoContent();
         });
@@ -66,14 +69,15 @@ public static class GroupEndpoints
             Guid spaceId,
             Guid id,
             IGroupService service,
-            ICurrentUserService current) =>
+            ICurrentUserService current,
+            CancellationToken ct) =>
         {
             var userId = current.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            await service.DeleteGroupAsync(id, Guid.Parse(userId));
+            await service.DeleteGroupAsync(id, Guid.Parse(userId), ct);
 
             return Results.NoContent();
         });

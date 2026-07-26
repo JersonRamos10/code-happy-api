@@ -14,27 +14,28 @@ public static class SnippetEndpoints
         groups.MapGet("/", async (
              ISnippetService service,
              ICurrentUserService current,
-            [AsParameters] SnippetParamsRequest req) =>
+            [AsParameters] SnippetParamsRequest req,
+            CancellationToken ct) =>
         {
             var userId = current.GetUserId();
 
             if (userId is null)
                 return Results.Unauthorized();
 
-            var snippets = await service.GetAllSnippetAsync(Guid.Parse(userId), req);
+            var snippets = await service.GetAllSnippetAsync(Guid.Parse(userId), req, ct);
 
             return Results.Ok(snippets);
 
         });
 
-        groups.MapGet("/{id}", async (string id, ISnippetService service, ICurrentUserService current) =>
+        groups.MapGet("/{id}", async (string id, ISnippetService service, ICurrentUserService current, CancellationToken ct) =>
         {
             var userId = current.GetUserId();
 
             if (userId is null)
                 return Results.Unauthorized();
 
-            var snippet = await service.GetSnippetByIdAsync(Guid.Parse(userId), Guid.Parse(id));
+            var snippet = await service.GetSnippetByIdAsync(Guid.Parse(userId), Guid.Parse(id), ct);
 
             return Results.Ok(snippet);
         });
@@ -43,9 +44,10 @@ public static class SnippetEndpoints
             CreateSnippetRequest request,
             IValidator<CreateSnippetRequest> validator,
             ISnippetService service,
-            ICurrentUserService current) =>
+            ICurrentUserService current,
+            CancellationToken ct) =>
         {
-            var result = await validator.ValidateAsync(request);
+            var result = await validator.ValidateAsync(request, ct);
 
             if (!result.IsValid)
                 return Results.ValidationProblem(result.ToDictionary());
@@ -55,7 +57,7 @@ public static class SnippetEndpoints
             if (userId is null)
                 return Results.Unauthorized();
 
-            var snippet = await service.CreateSnippetAsync(Guid.Parse(userId), request);
+            var snippet = await service.CreateSnippetAsync(Guid.Parse(userId), request, ct);
 
             return Results.Created($"/snippets/{snippet.Id}", snippet);
         });
@@ -65,9 +67,10 @@ public static class SnippetEndpoints
             UpdateSnippetRequest request,
             IValidator<UpdateSnippetRequest> validator,
             ISnippetService service,
-            ICurrentUserService current) =>
+            ICurrentUserService current,
+            CancellationToken ct) =>
         {
-            var result = await validator.ValidateAsync(request);
+            var result = await validator.ValidateAsync(request, ct);
 
             if (!result.IsValid)
                 return Results.ValidationProblem(result.ToDictionary());
@@ -77,7 +80,7 @@ public static class SnippetEndpoints
             if (userId is null)
                 return Results.Unauthorized();
 
-            await service.UpdateSnippetWithBlocksAsync(Guid.Parse(id), Guid.Parse(userId), request);
+            await service.UpdateSnippetWithBlocksAsync(Guid.Parse(id), Guid.Parse(userId), request, ct);
 
             return Results.NoContent();
         });
@@ -85,32 +88,35 @@ public static class SnippetEndpoints
         groups.MapDelete("/{id}", async (
             string id,
             ISnippetService service,
-            ICurrentUserService current) =>
+            ICurrentUserService current,
+            CancellationToken ct) =>
         {
             var userId = current.GetUserId();
 
             if (userId is null)
                 return Results.Unauthorized();
 
-            await service.DeleteSnippetbyId(Guid.Parse(userId), Guid.Parse(id));
+            await service.DeleteSnippetbyId(Guid.Parse(userId), Guid.Parse(id), ct);
 
             return Results.NoContent();
         });
 
         groups.MapPatch("/{id}/favorite", async (
             string id,
-            ISnippetService service) =>
+            ISnippetService service,
+            CancellationToken ct) =>
         {
-            await service.ToggleFavorite(Guid.Parse(id));
+            await service.ToggleFavorite(Guid.Parse(id), ct);
 
             return Results.NoContent();
         });
 
         groups.MapPost("/{id}/copy", async (
             string id,
-            ISnippetService service) =>
+            ISnippetService service,
+            CancellationToken ct) =>
         {
-            await service.RecordCopy(Guid.Parse(id));
+            await service.RecordCopy(Guid.Parse(id), ct);
 
             return Results.NoContent();
         });

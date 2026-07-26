@@ -16,9 +16,10 @@ public static class BlockEndpoints
             CreateBlockRequest request,
             IValidator<CreateBlockRequest> validator,
             IBlocksService service,
-            ICurrentUserService current) =>
+            ICurrentUserService current,
+            CancellationToken ct) =>
         {
-            var result = await validator.ValidateAsync(request);
+            var result = await validator.ValidateAsync(request, ct);
 
             if (!result.IsValid)
                 return Results.ValidationProblem(result.ToDictionary());
@@ -28,7 +29,7 @@ public static class BlockEndpoints
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            var block = await service.CreateBlockAsync(Guid.Parse(userId), snippetId, request);
+            var block = await service.CreateBlockAsync(Guid.Parse(userId), snippetId, request, ct);
 
             return Results.Created($"/snippets/{snippetId}/blocks/{block.Id}", block);
         });
@@ -40,9 +41,10 @@ public static class BlockEndpoints
             UpdateBlockRequest request,
             IValidator<UpdateBlockRequest> validator,
             IBlocksService service,
-            ICurrentUserService current) =>
+            ICurrentUserService current,
+            CancellationToken ct) =>
         {
-            var result = await validator.ValidateAsync(request);
+            var result = await validator.ValidateAsync(request, ct);
 
             if (!result.IsValid)
                 return Results.ValidationProblem(result.ToDictionary());
@@ -52,7 +54,7 @@ public static class BlockEndpoints
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            await service.UpdateBlockContentAsync(Guid.Parse(userId), snippetId, blockId, request);
+            await service.UpdateBlockContentAsync(Guid.Parse(userId), snippetId, blockId, request, ct);
 
             return Results.NoContent();
         });
@@ -64,11 +66,12 @@ public static class BlockEndpoints
             List<CreateAnnotationRequest>? request,
             IValidator<List<CreateAnnotationRequest>> validator,
             IBlocksService service,
-            ICurrentUserService current) =>
+            ICurrentUserService current,
+            CancellationToken ct) =>
         {
             if (request is not null)
             {
-                var result = await validator.ValidateAsync(request);
+                var result = await validator.ValidateAsync(request, ct);
 
                 if (!result.IsValid)
                     return Results.ValidationProblem(result.ToDictionary());
@@ -79,7 +82,7 @@ public static class BlockEndpoints
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            await service.UpdateBlockAnnotations(Guid.Parse(userId), snippetId, blockId, request);
+            await service.UpdateBlockAnnotations(Guid.Parse(userId), snippetId, blockId, request, ct);
 
             return Results.NoContent();
         });
@@ -89,14 +92,15 @@ public static class BlockEndpoints
             Guid snippetId,
             Guid blockId,
             IBlocksService service,
-            ICurrentUserService current) =>
+            ICurrentUserService current,
+            CancellationToken ct) =>
         {
             var userId = current.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            await service.DeleteBlock(Guid.Parse(userId), snippetId, blockId);
+            await service.DeleteBlock(Guid.Parse(userId), snippetId, blockId, ct);
 
             return Results.NoContent();
         });
@@ -107,9 +111,10 @@ public static class BlockEndpoints
             List<ReorderBlockRequest> request,
             IValidator<List<ReorderBlockRequest>> validator,
             IBlocksService service,
-            ICurrentUserService current) =>
+            ICurrentUserService current,
+            CancellationToken ct) =>
         {
-            var result = await validator.ValidateAsync(request ?? []);
+            var result = await validator.ValidateAsync(request ?? [], ct);
 
             if (!result.IsValid)
                 return Results.ValidationProblem(result.ToDictionary());
@@ -119,11 +124,11 @@ public static class BlockEndpoints
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            await service.ReorderBlocks(Guid.Parse(userId), snippetId, request);
+            await service.ReorderBlocks(Guid.Parse(userId), snippetId, request, ct);
 
             return Results.NoContent();
         });
-        
-        
+
+
     }
 }

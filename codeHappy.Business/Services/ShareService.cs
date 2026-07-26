@@ -13,17 +13,17 @@ public class ShareService(CodeHappyContext context) : IShareService
 {
     private readonly CodeHappyContext _context = context;
 
-    public async Task<ShareResponse> CreateShareAsync(Guid userId, CreateShareRequest request)
+    public async Task<ShareResponse> CreateShareAsync(Guid userId, CreateShareRequest request, CancellationToken ct)
     {
-        var snippet = 
+        var snippet =
             await _context.Snippets
-                .FirstOrDefaultAsync(s => s.Id == request.SnippetId) 
+                .FirstOrDefaultAsync(s => s.Id == request.SnippetId, ct)
             ?? throw new NotFoundException("snippet", request.SnippetId);
-        
+
         if(snippet.OwnerId != userId)
             throw new ForbiddenException();
-        
-        //Create share for snippet and date expiration 
+
+        //Create share for snippet and date expiration
 
         var share = new Share
         {
@@ -31,42 +31,42 @@ public class ShareService(CodeHappyContext context) : IShareService
             SharedBy =  userId,
             ExpiresAt = request.ExpiresAt,
         };
-        
-        await _context.Shares.AddAsync(share);
-        await _context.SaveChangesAsync();
-        
+
+        await _context.Shares.AddAsync(share, ct);
+        await _context.SaveChangesAsync(ct);
+
         return MapToShareResponse(share);
-        
+
     }
 
-    public async Task<IEnumerable<ShareResponse>> GetMySharesAsync(Guid userId)
+    public async Task<IEnumerable<ShareResponse>> GetMySharesAsync(Guid userId, CancellationToken ct)
     {
         var shares = _context.Shares
             .AsNoTracking()
             .Where(s => s.SharedBy == userId)
             .Select(s => MapToShareResponse(s));
 
-        return await shares.ToListAsync();
+        return await shares.ToListAsync(ct);
     }
 
-    public async Task DeleteShareAsync(Guid userId, Guid shareId)
+    public async Task DeleteShareAsync(Guid userId, Guid shareId, CancellationToken ct)
     {
-        var share = await _context.Shares.FirstOrDefaultAsync(s => s.Id == shareId)
+        var share = await _context.Shares.FirstOrDefaultAsync(s => s.Id == shareId, ct)
             ?? throw new NotFoundException("share", shareId);
-        
+
         if(share.SharedBy !=  userId)
             throw new ForbiddenException();
-        
+
         _context.Shares.Remove(share);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
     }
 
-    public async Task<SharedSnippetResponse> GetSharedSnippetAsync(Guid shareId)
+    public async Task<SharedSnippetResponse> GetSharedSnippetAsync(Guid shareId, CancellationToken ct)
     {
         var share = await _context.Shares
             .Include(s => s.Snippet)
                 .ThenInclude(sn => sn.Blocks)
-            .FirstOrDefaultAsync(s => s.Id == shareId)
+            .FirstOrDefaultAsync(s => s.Id == shareId, ct)
             ?? throw new NotFoundException("share", shareId);
 
         if (share.ExpiresAt.HasValue && share.ExpiresAt < DateTime.UtcNow)
