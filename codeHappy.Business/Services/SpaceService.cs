@@ -16,7 +16,7 @@ public class SpaceService : ISpaceService
         _context = context;
     }
     // Creates a new space for the authenticated user. Returns the created space.
-    public async Task<SpaceResponse> CreateSpaceAsync(Guid userId, CreateSpaceRequest request)
+    public async Task<SpaceResponse> CreateSpaceAsync(Guid userId, CreateSpaceRequest request, CancellationToken ct)
     {
         var space = new Space
         {
@@ -25,27 +25,27 @@ public class SpaceService : ISpaceService
             Icon = request.Icon,
         };
 
-        await _context.Spaces.AddAsync(space);
-        await _context.SaveChangesAsync();
+        await _context.Spaces.AddAsync(space, ct);
+        await _context.SaveChangesAsync(ct);
 
         return MapToResponse(space);
     }
 
     // Returns all spaces owned by the user.
-    public async Task<IEnumerable<SpaceResponse>> GetAllSpacesAsync(Guid userId)
+    public async Task<IEnumerable<SpaceResponse>> GetAllSpacesAsync(Guid userId, CancellationToken ct)
     {
         return await _context.Spaces
             .AsNoTracking()
             .Where(s => s.OwnerId == userId)
             .Select(s => MapToResponse(s))
-            .ToListAsync();
+            .ToListAsync(ct);
     }
 
     // Updates name and icon. Throws ForbiddenException if the user is not the owner.
-    public async Task UpdateSpaceAsync(Guid spaceId, Guid userId, UpdateSpaceRequest request)
+    public async Task UpdateSpaceAsync(Guid spaceId, Guid userId, UpdateSpaceRequest request, CancellationToken ct)
     {
         var space = await _context.Spaces
-                .FirstOrDefaultAsync(s => s.Id == spaceId) ?? throw new NotFoundException("Space", spaceId);
+                .FirstOrDefaultAsync(s => s.Id == spaceId, ct) ?? throw new NotFoundException("Space", spaceId);
 
         if (space.OwnerId != userId)
             throw new ForbiddenException();
@@ -54,33 +54,33 @@ public class SpaceService : ISpaceService
         space.Icon = request.Icon;
         space.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
     }
 
     // Updates LastAccessedAt to now. Used to track recently opened spaces.
-    public async Task TouchSpaceAsync(Guid spaceId, Guid userId)
+    public async Task TouchSpaceAsync(Guid spaceId, Guid userId, CancellationToken ct)
     {
         var space = await _context.Spaces
-             .FirstOrDefaultAsync(s => s.Id == spaceId) ?? throw new NotFoundException("Space", spaceId);
+             .FirstOrDefaultAsync(s => s.Id == spaceId, ct) ?? throw new NotFoundException("Space", spaceId);
 
         if (space.OwnerId != userId)
             throw new ForbiddenException();
 
         space.LastAccessedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
     }
 
     // Deletes the space and cascades to groups. Snippets keep space_id as null.
-    public async Task DeleteSpaceAsync(Guid spaceId, Guid userId)
+    public async Task DeleteSpaceAsync(Guid spaceId, Guid userId, CancellationToken ct)
     {
         var space = await _context.Spaces
-            .FirstOrDefaultAsync(s => s.Id == spaceId) ?? throw new NotFoundException("Space", spaceId);
+            .FirstOrDefaultAsync(s => s.Id == spaceId, ct) ?? throw new NotFoundException("Space", spaceId);
 
         if (space.OwnerId != userId)
             throw new ForbiddenException();
 
         _context.Remove(space);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
     }
 
 

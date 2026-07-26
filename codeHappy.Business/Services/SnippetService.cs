@@ -18,10 +18,10 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
     private readonly IImagesService _imagesService = imagesService;
 
     // Creates a snippet with its blocks. Verifies the user exists before creating.
-    public async Task<SnippetResponse> CreateSnippetAsync(Guid userId, CreateSnippetRequest req)
+    public async Task<SnippetResponse> CreateSnippetAsync(Guid userId, CreateSnippetRequest req, CancellationToken ct)
     {
         var profile = await _context.Profiles
-                    .FindAsync(userId)
+                    .FindAsync([userId], ct)
                     ?? throw new NotFoundException("Profile", userId);
 
         var snippet = new Snippet
@@ -50,18 +50,18 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
             }).ToList(),
         };
 
-        await _context.Snippets.AddAsync(snippet);
-        await _context.SaveChangesAsync();
+        await _context.Snippets.AddAsync(snippet, ct);
+        await _context.SaveChangesAsync(ct);
 
         return MapToResponse(snippet);
     }
 
     // Deletes a snippet. Throws ForbiddenException if the user is not the owner.
-    public async Task DeleteSnippetbyId(Guid userId, Guid snippetId)
+    public async Task DeleteSnippetbyId(Guid userId, Guid snippetId, CancellationToken ct)
     {
         var snippet = await _context.Snippets
             .Include(s => s.Blocks)
-            .FirstOrDefaultAsync(s => s.Id == snippetId)
+            .FirstOrDefaultAsync(s => s.Id == snippetId, ct)
             ?? throw new NotFoundException("Snippet", snippetId);
 
         if (snippet.OwnerId != userId)
@@ -73,16 +73,16 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
             .ToList();
 
         _context.Remove(snippet);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
 
         foreach (var publicId in imagePublicIds)
-            await _imagesService.DestroyAssetBestEffortAsync(publicId, CancellationToken.None);
+            await _imagesService.DestroyAssetBestEffortAsync(publicId, ct);
     }
 
-    public async Task<PagedResponse<SnippetResponse>> GetAllSnippetAsync(Guid userId, SnippetParamsRequest req)
+    public async Task<PagedResponse<SnippetResponse>> GetAllSnippetAsync(Guid userId, SnippetParamsRequest req, CancellationToken ct)
     {
         var profile = await _context.Profiles
-                .FindAsync(userId)
+                .FindAsync([userId], ct)
                 ?? throw new ForbiddenException();
 
         var query = _context.Snippets.AsNoTracking().AsQueryable();
@@ -98,13 +98,13 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
         if (req.IsFavorite.HasValue)
             query = query.Where(s => s.IsFavorite == req.IsFavorite);
 
-        var totalItems = await query.CountAsync();
+        var totalItems = await query.CountAsync(ct);
 
         var items = await query
             .OrderBy(s => s.Title)
             .Skip((req.PageNumber - 1) * req.PageSize)
             .Take(req.PageSize)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         int totalPages = (int)Math.Ceiling((double)totalItems / req.PageSize);
 
@@ -117,30 +117,30 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
         );
     }
 
-    public async Task<SnippetResponse> GetSnippetByIdAsync(Guid userId, Guid snippetId)
+    public async Task<SnippetResponse> GetSnippetByIdAsync(Guid userId, Guid snippetId, CancellationToken ct)
     {
         var snippet = await _context.Snippets
-            .FirstOrDefaultAsync(s => s.Id == snippetId)
+            .FirstOrDefaultAsync(s => s.Id == snippetId, ct)
             ?? throw new NotFoundException("Snippet", snippetId);
 
          if (snippet.OwnerId != userId && snippet.Visibility != SnippetVisibility.Public)
             throw new ForbiddenException();
-        
+
         //Increment of property viewCount before to mapping
         snippet.ViewCount++;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
 
         return MapToResponse(snippet);
 
     }
 
     // Destructive update: deletes all existing blocks and recreates them from the request.
-    public async Task UpdateSnippetWithBlocksAsync(Guid snippetId, Guid userId, UpdateSnippetRequest req)
+    public async Task UpdateSnippetWithBlocksAsync(Guid snippetId, Guid userId, UpdateSnippetRequest req, CancellationToken ct)
     {
         var snippet = await _context.Snippets
             .Include(s => s.Blocks)
-            .FirstOrDefaultAsync(s => s.Id == snippetId)
+            .FirstOrDefaultAsync(s => s.Id == snippetId, ct)
             ?? throw new NotFoundException("Snippet", snippetId);
 
         if (snippet.OwnerId != userId)
@@ -183,32 +183,32 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
             }
         }).ToList();
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
 
         foreach (var publicId in publicIdsToDestroy)
-            await _imagesService.DestroyAssetBestEffortAsync(publicId, CancellationToken.None);
+            await _imagesService.DestroyAssetBestEffortAsync(publicId, ct);
     }
-    public async Task RecordCopy(Guid snippetId)
+    public async Task RecordCopy(Guid snippetId, CancellationToken ct)
     {
         var snippet = await _context.Snippets
-            .FindAsync(snippetId)
+            .FindAsync([snippetId], ct)
             ?? throw new NotFoundException("Snippet", snippetId);
 
         snippet.CopyCount++;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
     }
 
     // Toggles the favorite state of a snippet.
-    public async Task ToggleFavorite(Guid snippetId)
+    public async Task ToggleFavorite(Guid snippetId, CancellationToken ct)
     {
         var snippet = await _context.Snippets
-            .FindAsync(snippetId)
+            .FindAsync([snippetId], ct)
             ?? throw new NotFoundException("Snippet", snippetId);
 
         snippet.IsFavorite = !snippet.IsFavorite;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
     }
 
     private static SnippetResponse MapToResponse(Snippet snippet)
@@ -240,7 +240,7 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
             block.UpdatedAt
         );
     }
-    
+
     private static AnnotationResponse MapToAnnotationResponse(CodeAnnotation annotation)
     {
         return new AnnotationResponse(
@@ -249,5 +249,5 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
             Text: annotation.Text
         );
     }
-    
+
 }
