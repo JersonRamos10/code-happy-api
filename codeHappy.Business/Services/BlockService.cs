@@ -10,19 +10,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace codeHappy.Business.Services
 {
-    public class BlockService : IBlocksService
+    public class BlockService(CodeHappyContext context, IImagesService imagesService) : IBlocksService
     {
-        private readonly CodeHappyContext _context;
-        private readonly IImagesService _imagesService;
-
-        public BlockService(CodeHappyContext context, IImagesService imagesService)
-        {
-            _context = context;
-            _imagesService = imagesService;
-        }
         public async Task<BlocksResponse> CreateBlockAsync(Guid userId, Guid snippetId, CreateBlockRequest request)
         {
-            var snippet = await _context.Snippets
+            var snippet = await context.Snippets
                     .FindAsync(snippetId)
                     ?? throw new NotFoundException("Snippet", snippetId);
 
@@ -50,37 +42,37 @@ namespace codeHappy.Business.Services
                 }
             };
 
-            await _context.AddAsync(block);
-            await _context.SaveChangesAsync();
+            await context.AddAsync(block);
+            await context.SaveChangesAsync();
 
             return MapToBlocksResponse(block);
         }
 
         public async Task DeleteBlock(Guid UserId, Guid snippetId, Guid blockId)
         {
-            var snippet = await _context.Snippets
+            var snippet = await context.Snippets
                               .Include(s => s.Blocks)
                               .FirstOrDefaultAsync(s => s.Id == snippetId)
                               ?? throw new NotFoundException("Snippet", snippetId);
 
             if(snippet.OwnerId != UserId)
                 throw new ForbiddenException();
-            
-            var block = await _context.Blocks
+
+            var block = await context.Blocks
                   .FirstOrDefaultAsync(b => b.Id == blockId && b.SnippetId == snippetId)
                         ?? throw new NotFoundException("Block", blockId);
 
-            _context.Remove(block);
+            context.Remove(block);
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             if (block.ImageMetadata is not null)
-                await _imagesService.DestroyAssetBestEffortAsync(block.ImageMetadata.PublicId, CancellationToken.None);
+                await imagesService.DestroyAssetBestEffortAsync(block.ImageMetadata.PublicId, CancellationToken.None);
         }
 
         public async Task ReorderBlocks(Guid UserId, Guid snippetId, List<ReorderBlockRequest> reorderBlocks)
         {
-            var snippet = await _context.Snippets
+            var snippet = await context.Snippets
                               .Include(s => s.Blocks)
                               .FirstOrDefaultAsync(s => s.Id == snippetId) 
                               ?? throw new NotFoundException("Snippet", snippetId);
@@ -98,36 +90,36 @@ namespace codeHappy.Business.Services
                 b.Position = item.Position;
             }
             
-            await _context.SaveChangesAsync();  
+            await context.SaveChangesAsync();  
         }
 
         public async Task UpdateBlockAnnotations(Guid UserId, Guid snippetId, Guid blockId, List<CreateAnnotationRequest>? request)
         {
-            var snippet = await _context.Snippets.FindAsync(snippetId)       
+            var snippet = await context.Snippets.FindAsync(snippetId)       
                         ?? throw new NotFoundException("Snippet", snippetId);        
 
             if (snippet.OwnerId != UserId)                                   
                 throw new ForbiddenException();                              
 
-            var block = await _context.Blocks                                
+            var block = await context.Blocks                                
                             .FirstOrDefaultAsync(b => b.Id == blockId && b.SnippetId ==  
                                 snippetId) ?? throw new NotFoundException("Block", blockId);
             
             block.Annotations = request is null ? [] : request.Select(a => MapToCodeAnnotation(a)).ToList();
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
 
         public async Task UpdateBlockContentAsync(Guid userId, Guid snippetId, Guid blockId, UpdateBlockRequest request)
         {
         
-            var snippet = await _context.Snippets.FindAsync(snippetId)
+            var snippet = await context.Snippets.FindAsync(snippetId)
                 ?? throw new NotFoundException("Snippet", snippetId);
 
             if (snippet.OwnerId != userId)
                 throw new ForbiddenException();
 
-            var block = await _context.Blocks
+            var block = await context.Blocks
                 .FirstOrDefaultAsync(b => b.Id == blockId && b.SnippetId == snippetId)
                 ?? throw new NotFoundException("Block", blockId);
 
@@ -135,7 +127,7 @@ namespace codeHappy.Business.Services
             block.Content = request.Content ?? block.Content;
             block.Language = request.Language ?? block.Language;
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
 
         private static BlocksResponse MapToBlocksResponse(Block block)
