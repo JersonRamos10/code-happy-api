@@ -8,7 +8,7 @@ public static class GroupEndpoints
 
     public static void MapGroupEndpoints(this WebApplication app)
     {
-        var groups = app.MapGroup("/spaces/{spaceId}/groups").RequireAuthorization();
+        var groups = app.MapGroup("api/spaces/{spaceId}/groups").RequireAuthorization();
 
         // GET /spaces/{spaceId}/groups — returns all groups in the space ordered by position.
         groups.MapGet("/", async (

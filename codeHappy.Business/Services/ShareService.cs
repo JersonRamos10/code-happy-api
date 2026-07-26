@@ -2,6 +2,7 @@ using codeHappy.Business.Dtos.Blocks;
 using codeHappy.Business.Dtos.Shares;
 using codeHappy.Business.Exceptions;
 using codeHappy.Business.Interfaces;
+using codeHappy.Business.Mappers;
 using codeHappy.Data.Context;
 using codeHappy.Data.Models;
 using Microsoft.EntityFrameworkCore;
@@ -106,7 +107,7 @@ public class ShareService(CodeHappyContext context) : IShareService
             block.Type,
             block.Annotations.Select(MapToAnnotationResponse).ToList(),
             block.Position,
-            ImageMetadata: block.ImageMetadata is null ? null : MapToImageMetadataResponse(block.ImageMetadata),
+            ImageMetadata: block.ImageMetadata is null ? null : ImageMetadataMapper.ToResponse(block.ImageMetadata),
             block.CreatedAt,
             block.UpdatedAt
         );
@@ -121,13 +122,4 @@ public class ShareService(CodeHappyContext context) : IShareService
         );
     }
 
-    private static ImageMetadataResponse MapToImageMetadataResponse(ImageMetadata imageMetadata)
-    {
-        return new ImageMetadataResponse(
-            imageMetadata.Width,
-            imageMetadata.Height,
-            imageMetadata.Alt,
-            imageMetadata.BucketPath
-        );
-    }
 }
