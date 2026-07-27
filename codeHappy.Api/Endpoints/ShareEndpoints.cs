@@ -8,7 +8,7 @@ public static class ShareEndpoints
 {
     public static void MapShareEndpoints(this WebApplication app)
     {
-        var snippetShares = app.MapGroup("/snippets/{snippetId}/shares").RequireAuthorization();
+        var snippetShares = app.MapGroup("api/snippets/{snippetId}/shares").RequireAuthorization();
 
         // POST /snippets/{snippetId}/shares — creates a share for the snippet.
         snippetShares.MapPost("/", async (
@@ -32,10 +32,10 @@ public static class ShareEndpoints
 
             var share = await service.CreateShareAsync(Guid.Parse(userId), normalizedRequest);
 
-            return Results.Created($"/shared/{share.Id}", share);
+            return Results.Created($"api/shared/{share.Id}", share);
         });
 
-        var shares = app.MapGroup("/shares").RequireAuthorization();
+        var shares = app.MapGroup("api/shares").RequireAuthorization();
 
         // GET /shares — lists the shares created by the authenticated user.
         shares.MapGet("/", async (
@@ -70,7 +70,7 @@ public static class ShareEndpoints
 
         // GET /shared/{shareId} — anonymous, public view of the shared snippet. Intentionally NOT under RequireAuthorization():
         // this is the one link meant to work without a logged-in user, so it lives in its own MapGroup to make that explicit.
-        var publicShares = app.MapGroup("/shared");
+        var publicShares = app.MapGroup("api/shared");
 
         publicShares.MapGet("/{shareId}", async (
             Guid shareId,
