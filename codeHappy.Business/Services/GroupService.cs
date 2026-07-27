@@ -9,20 +9,12 @@ using codeHappy.Data.Models;
 
 namespace codeHappy.Business.Services;
 
-public class GroupService : IGroupService
+public class GroupService(CodeHappyContext context) : IGroupService
 {
-
-    private readonly CodeHappyContext _context;
-    public GroupService(CodeHappyContext context)
-    {
-        _context = context;
-    }
-
-
     // Creates a group inside a space. Position is calculated as the current group count in that space.
     public async Task<GroupResponse> CreateGroupAsync(Guid spaceId, Guid userId, string name, CancellationToken ct)
     {
-        var space = await _context.Spaces
+        var space = await context.Spaces
                 .Include(s => s.Groups)
                 .FirstOrDefaultAsync(s => s.Id == spaceId, ct)
                 ?? throw new NotFoundException("Space", spaceId);
@@ -37,8 +29,8 @@ public class GroupService : IGroupService
             Position = space.Groups.Count,
         };
 
-        await _context.Groups.AddAsync(group, ct);
-        await _context.SaveChangesAsync(ct);
+        await context.Groups.AddAsync(group, ct);
+        await context.SaveChangesAsync(ct);
 
         return MapToResponse(group);
     }
@@ -46,14 +38,14 @@ public class GroupService : IGroupService
     // Returns all groups in a space ordered by position ascending.
     public async Task<IEnumerable<GroupResponse>> GetAllGroupsAsync(Guid spaceId, Guid userId, CancellationToken ct)
     {
-        var space = await _context.Spaces
+        var space = await context.Spaces
             .FirstOrDefaultAsync(s => s.Id == spaceId, ct)
             ?? throw new NotFoundException("Space", spaceId);
 
         if (space.OwnerId != userId)
             throw new ForbiddenException();
 
-        return await _context.Groups
+        return await context.Groups
                 .Where(g => g.SpaceId == spaceId)
                 .OrderBy(g => g.Position)
                 .Select(g => MapToResponse(g))
@@ -63,7 +55,7 @@ public class GroupService : IGroupService
     // Renames the group. Verifies ownership through the parent space.
     public async Task UpdateGroupAsync(Guid groupId, Guid userId, string name, CancellationToken ct)
     {
-        var group = await _context.Groups
+        var group = await context.Groups
             .Include(g => g.Space)
             .FirstOrDefaultAsync(g => g.Id == groupId, ct)
             ?? throw new NotFoundException("Group", groupId);
@@ -74,13 +66,13 @@ public class GroupService : IGroupService
         group.Name = name;
         group.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(ct);
+        await context.SaveChangesAsync(ct);
     }
 
     // Deletes the group. Verifies ownership through the parent space.
     public async Task DeleteGroupAsync(Guid groupId, Guid userId, CancellationToken ct)
     {
-        var group = await _context.Groups
+        var group = await context.Groups
             .Include(g => g.Space)
             .FirstOrDefaultAsync(g => g.Id == groupId, ct)
             ?? throw new NotFoundException("Group", groupId);
@@ -88,8 +80,31 @@ public class GroupService : IGroupService
         if (group.Space.OwnerId != userId)
             throw new ForbiddenException();
 
-        _context.Groups.Remove(group);
-        await _context.SaveChangesAsync(ct);
+        context.Groups.Remove(group);
+        await context.SaveChangesAsync(ct);
+    }
+
+    // Reorders groups within a space. The client sends the final positions — the service only persists them.
+    public async Task ReorderGroupsAsync(Guid spaceId, Guid userId, List<ReorderGroupRequest> reorderGroups, CancellationToken ct)
+    {
+        var space = await context.Spaces
+            .Include(s => s.Groups)
+            .FirstOrDefaultAsync(s => s.Id == spaceId, ct)
+            ?? throw new NotFoundException("Space", spaceId);
+
+        if (space.OwnerId != userId)
+            throw new ForbiddenException();
+
+        foreach (var item in reorderGroups)
+        {
+            var group = space.Groups
+                .FirstOrDefault(g => g.Id == item.Id)
+                ?? throw new NotFoundException("Group", item.Id);
+
+            group.Position = item.Position;
+        }
+
+        await context.SaveChangesAsync(ct);
     }
 
     private static GroupResponse MapToResponse(Group group)

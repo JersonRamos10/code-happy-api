@@ -12,4 +12,6 @@ public interface IGroupService
     Task UpdateGroupAsync(Guid groupId, Guid userId, string name, CancellationToken ct);
     Task DeleteGroupAsync(Guid groupId, Guid userId, CancellationToken ct);
 
+    Task ReorderGroupsAsync(Guid spaceId, Guid userId, List<ReorderGroupRequest> reorderGroups, CancellationToken ct);
+
 }
