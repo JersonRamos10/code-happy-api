@@ -1,5 +1,6 @@
 using codeHappy.Business.Dtos.Groups;
 using codeHappy.Business.Interfaces;
+using FluentValidation;
 
 namespace codeHappy.Api.Endpoints;
 
@@ -42,7 +43,7 @@ public static class GroupEndpoints
 
             var group = await service.CreateGroupAsync(spaceId, Guid.Parse(userId), request.Name, ct);
 
-            return Results.Created($"/spaces/{spaceId}/groups/{group.Id}", group);
+            return Results.Created($"api/spaces/{spaceId}/groups/{group.Id}", group);
         });
 
         // PUT /spaces/{spaceId}/groups/{id} — renames the group.
@@ -78,6 +79,30 @@ public static class GroupEndpoints
                 return Results.Unauthorized();
 
             await service.DeleteGroupAsync(id, Guid.Parse(userId), ct);
+
+            return Results.NoContent();
+        });
+
+        // PUT /spaces/{spaceId}/groups/reorder — bulk-updates group positions.
+        groups.MapPut("/reorder", async (
+            Guid spaceId,
+            List<ReorderGroupRequest> request,
+            IValidator<List<ReorderGroupRequest>> validator,
+            IGroupService service,
+            ICurrentUserService current,
+            CancellationToken ct) =>
+        {
+            var result = await validator.ValidateAsync(request ?? [], ct);
+
+            if (!result.IsValid)
+                return Results.ValidationProblem(result.ToDictionary());
+
+            var userId = current.GetUserId();
+
+            if (string.IsNullOrEmpty(userId))
+                return Results.Unauthorized();
+
+            await service.ReorderGroupsAsync(spaceId, Guid.Parse(userId), request, ct);
 
             return Results.NoContent();
         });
