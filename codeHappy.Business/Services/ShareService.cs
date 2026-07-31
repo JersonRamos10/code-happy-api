@@ -4,6 +4,7 @@ using codeHappy.Business.Exceptions;
 using codeHappy.Business.Interfaces;
 using codeHappy.Business.Mappers;
 using codeHappy.Data.Context;
+using codeHappy.Data.Enums;
 using codeHappy.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +23,9 @@ public class ShareService(CodeHappyContext context) : IShareService
 
         if(snippet.OwnerId != userId)
             throw new ForbiddenException();
+
+        if (snippet.Visibility == SnippetVisibility.Private)
+            throw new BadRequestException("Cannot create a share for a private snippet.");
 
         //Create share for snippet and date expiration
 

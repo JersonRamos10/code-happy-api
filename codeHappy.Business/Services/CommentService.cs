@@ -30,40 +30,74 @@ public class CommentService(CodeHappyContext context) : ICommentService
         await _context.Comments.AddAsync(comment, ct);
         await _context.SaveChangesAsync(ct);
 
-        var profile = await _context.Profiles
-            .FindAsync([userId], ct);
-
-        return new CommentResponse(
-            comment.Id,
-            comment.SnippetId,
-            comment.Text,
-            comment.CreatedAt,
-            comment.UpdatedAt,
-            comment.OwnerId,
-            Profile: new UserProfileResponse(
-                profile!.Id,
-                profile.UserName,
-                profile.Email,
-                profile.AvatarUrl
-            )
-        );
+        var profile = await _context.Profiles.FindAsync([userId], ct)
+                      ?? throw new NotFoundException("profile", userId);
+        
+        comment.Profile = profile;
+        return MapToCommentResponse(comment);
 
     }
 
-    public Task<IEnumerable<CommentResponse>> GetAllCommentsAsync(Guid userId, Guid snippetId, Guid? shareId,
+    public async Task<IEnumerable<CommentResponse>> GetAllCommentsAsync(Guid userId, Guid snippetId, Guid? shareId,
         CancellationToken ct)
     {
-        throw new NotImplementedException();
+        var snippet = await GetAuthorizedSnippetAsync(userId, snippetId, shareId, ct);
+        
+        var commentsOfSnippet = await _context.Comments
+            .Where( c => c.SnippetId == snippetId)
+            .AsNoTracking()
+            .OrderBy(c => c.CreatedAt)
+            .Select (c => new CommentResponse(
+                c.Id,
+                c.SnippetId,
+                c.Text,
+                c.CreatedAt,
+                c.UpdatedAt,
+                c.OwnerId,
+                new UserProfileResponse(
+                    c.Profile.Id,
+                    c.Profile.UserName,
+                    c.Profile.Email,
+                    c.Profile.AvatarUrl) 
+                ))
+            .ToListAsync(ct);
+
+        return commentsOfSnippet;
+
     }
 
-    public Task UpdateCommentAsync(Guid userId, Guid commentId, UpdateCommentRequest request, CancellationToken ct)
+    public async Task UpdateCommentAsync(Guid userId, Guid snippetId,Guid commentId,Guid? shareId, UpdateCommentRequest request, CancellationToken ct)
     {
-        throw new NotImplementedException();
+        var snippet = await GetAuthorizedSnippetAsync(userId, snippetId, shareId, ct);
+        
+        var comment = await 
+            _context.Comments.
+                FirstOrDefaultAsync( c => c.Id == commentId && c.SnippetId == snippetId,ct)
+        ?? throw new NotFoundException("comment", commentId);
+
+        if (comment.OwnerId != userId)
+            throw new ForbiddenException();
+        
+        comment.Text = request.Text.Trim();
+        comment.UpdatedAt = DateTime.UtcNow;
+            
+            
+        await _context.SaveChangesAsync(ct);
+        
     }
 
-    public Task DeleteCommentAsync(Guid userId, Guid commentId, CancellationToken ct)
+    public async Task DeleteCommentAsync(Guid userId, Guid commentId, CancellationToken ct)
     {
-        throw new NotImplementedException();
+        var c = await _context.Comments.Include(c => c.Snippet)
+                    .FirstOrDefaultAsync(c => c.Id == commentId,ct)
+                ?? throw new NotFoundException("comment", commentId);
+
+        if (c.Snippet.OwnerId != userId && c.OwnerId != userId)
+            throw new ForbiddenException();
+
+        _context.Comments.Remove(c);
+        await _context.SaveChangesAsync(ct);
+        
     }
 
     private async Task<Snippet> GetAuthorizedSnippetAsync(
@@ -92,4 +126,27 @@ public class CommentService(CodeHappyContext context) : ICommentService
         return snippet;
     }
 
+
+    private static CommentResponse MapToCommentResponse(Comment comment)
+    {
+        return new CommentResponse(
+            comment.Id,
+            comment.SnippetId,
+            comment.Text,
+            comment.CreatedAt,
+            comment.UpdatedAt,
+            comment.OwnerId,
+            Profile: MapToUserProfileResponse(comment.Profile)
+        );
+
+    }
+    private static UserProfileResponse MapToUserProfileResponse(Profile profile)
+    {
+        return new UserProfileResponse(
+            profile!.Id,
+            profile.UserName,
+            profile.Email,
+            profile.AvatarUrl
+        );
+    }
 }
