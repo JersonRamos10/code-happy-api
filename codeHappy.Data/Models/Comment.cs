@@ -5,11 +5,7 @@ public class Comment
     public Guid Id { get; set; }
 
     public required string Text { get; set; }
-
-    public required string OwnerName { get; set; }
-
-    public string? OwnerAvatar { get; set; }
-
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; }

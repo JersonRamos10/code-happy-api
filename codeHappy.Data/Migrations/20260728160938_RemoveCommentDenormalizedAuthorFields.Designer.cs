@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using codeHappy.Data.Context;
@@ -13,9 +14,11 @@ using codeHappy.Data.Models;
 namespace codeHappy.Data.Migrations
 {
     [DbContext(typeof(CodeHappyContext))]
-    partial class CodeHappyContextModelSnapshot : ModelSnapshot
+    [Migration("20260728160938_RemoveCommentDenormalizedAuthorFields")]
+    partial class RemoveCommentDenormalizedAuthorFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -103,6 +106,8 @@ namespace codeHappy.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OwnerId");
+
+                    b.HasIndex("SnippetId");
 
                     b.HasIndex("SnippetId", "CreatedAt");
 

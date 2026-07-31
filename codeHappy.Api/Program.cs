@@ -33,6 +33,7 @@ builder.Services.AddScoped<ISnippetService, SnippetService>();
 builder.Services.AddScoped<IBlocksService, BlockService>();
 builder.Services.AddScoped<IImagesService, ImagesService>();
 builder.Services.AddScoped<IShareService, ShareService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<SpaceService>();
 builder.Services.AddValidatorsFromAssemblyContaining<SnippetService>();
@@ -71,6 +72,7 @@ app.MapSnippetEndpoints();
 app.MapBlockEndpoints();
 app.MapImageEndpoints();
 app.MapShareEndpoints();
+app.MapCommentEndpoints();
 
 app.Run();
 
