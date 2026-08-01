@@ -45,6 +45,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 
+builder.Services.AddClientCors(builder.Configuration);
+
 //Config of Authentication JWT
 builder.Services.AddSupabaseAuth(builder.Configuration);
 builder.Services.AddCloudinary(builder.Configuration);
@@ -60,7 +62,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseExceptionHandler();
-
+app.UseCors("FrontendCors");
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -73,6 +75,7 @@ app.MapBlockEndpoints();
 app.MapImageEndpoints();
 app.MapShareEndpoints();
 app.MapCommentEndpoints();
+app.MapHealthEndpoint();
 
 app.Run();
 
