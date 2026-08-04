@@ -31,6 +31,18 @@ public class SpaceService : ISpaceService
         return MapToResponse(space);
     }
 
+    public async Task<SpaceResponse> GetSpaceAsync(Guid spaceId, Guid userId, CancellationToken ct)
+    {
+        var space = await _context.Spaces
+            .FirstOrDefaultAsync(s => s.Id == spaceId, ct)
+                    ?? throw new NotFoundException("Space", spaceId);
+
+        if (space.OwnerId != userId)
+            throw new ForbiddenException();
+
+        return MapToResponse(space);
+    }
+
     // Returns all spaces owned by the user.
     public async Task<IEnumerable<SpaceResponse>> GetAllSpacesAsync(Guid userId, CancellationToken ct)
     {

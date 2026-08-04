@@ -9,7 +9,8 @@ public static class AuthenticationExtensions
 {
     public static IServiceCollection AddSupabaseAuth(this IServiceCollection services, IConfiguration config)
     {
-        var supabaseUrl = config["Supabase:AuthUrl"];
+        var supabaseUrl = config["Supabase:AuthUrl"]
+                          ?? throw new InvalidOperationException(" missing operation required in 'Supabase:AuthUrl'.");;
         var authority = $"{supabaseUrl}/auth/v1";
         var metadataAddress = $"{authority}/.well-known/openid-configuration";
 

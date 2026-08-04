@@ -141,7 +141,7 @@ namespace codeHappy.Business.Services
                 Annotations: block.Annotations.Select(a => MapToAnnotationResponse(a)).ToList(),
                 Position: block.Position,
                 CreatedAt: block.CreatedAt,
-                UpdateAt: block.UpdatedAt,
+                UpdatedAt: block.UpdatedAt,
                 ImageMetadata: block.ImageMetadata is null ? null : ImageMetadataMapper.ToResponse(block.ImageMetadata)
             );
         }

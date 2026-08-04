@@ -4,36 +4,26 @@ using Microsoft.AspNetCore.Http;
 
 namespace codeHappy.Api.Services;
 
-public class CurrentUserService : ICurrentUserService
+public class CurrentUserService(IHttpContextAccessor accessor) : ICurrentUserService
 {
 
-    private readonly IHttpContextAccessor _accesor;
-    public CurrentUserService(IHttpContextAccessor accessor)
-    {
-        _accesor = accessor;
-    }
-    public string? GetDisplayName()
-    {
-        return _accesor.HttpContext?
-                .User.FindFirstValue("display_name");
+    private readonly IHttpContextAccessor _accesor = accessor;
 
-    }
 
     public string? GetEmail()
     {
-        return _accesor.HttpContext?
-            .User.FindFirstValue(ClaimTypes.Email);
+        var user = _accesor.HttpContext?.User;
+
+        return user?.FindFirstValue("email")
+               ?? user?.FindFirstValue(ClaimTypes.Email);
     }
 
     public string? GetUserId()
     {
-        return _accesor.HttpContext?
-            .User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var user = _accesor.HttpContext?.User;
+
+        return user?.FindFirstValue("sub")
+               ?? user?.FindFirstValue(ClaimTypes.NameIdentifier);
     }
 
-    public string? GetUserName()
-    {
-        return _accesor.HttpContext?
-            .User.FindFirstValue(ClaimTypes.Name);
-    }
 }

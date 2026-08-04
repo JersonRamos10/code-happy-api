@@ -10,5 +10,5 @@ public record UpdateSnippetRequest(
     List<CreateBlockRequest> Blocks,
     Guid? SpaceId,
     Guid? GroupId,
-    string? Topics
+    List<string>? Topics
 );

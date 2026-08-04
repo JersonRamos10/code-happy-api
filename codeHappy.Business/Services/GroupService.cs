@@ -52,16 +52,40 @@ public class GroupService(CodeHappyContext context) : IGroupService
                 .ToListAsync(ct);
     }
 
-    // Renames the group. Verifies ownership through the parent space.
-    public async Task UpdateGroupAsync(Guid groupId, Guid userId, string name, CancellationToken ct)
+    // Returns one group only when it belongs to the requested space and the user owns that space.
+    public async Task<GroupResponse> GetGroupAsync(Guid spaceId, Guid groupId, Guid userId, CancellationToken ct)
     {
+        var space = await context.Spaces
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == spaceId, ct)
+            ?? throw new NotFoundException("Space", spaceId);
+
+        if (space.OwnerId != userId)
+            throw new ForbiddenException();
+
         var group = await context.Groups
-            .Include(g => g.Space)
-            .FirstOrDefaultAsync(g => g.Id == groupId, ct)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(g => g.Id == groupId && g.SpaceId == spaceId, ct)
             ?? throw new NotFoundException("Group", groupId);
 
-        if (group.Space.OwnerId != userId)
+        return MapToResponse(group);
+    }
+
+    // Renames the group. Validates the route's space first and then scopes the group
+    // to it, so a crossed or non-existent spaceId cannot reach someone else's group.
+    public async Task UpdateGroupAsync(Guid spaceId, Guid groupId, Guid userId, string name, CancellationToken ct)
+    {
+        var space = await context.Spaces
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == spaceId, ct)
+            ?? throw new NotFoundException("Space", spaceId);
+
+        if (space.OwnerId != userId)
             throw new ForbiddenException();
+
+        var group = await context.Groups
+            .FirstOrDefaultAsync(g => g.Id == groupId && g.SpaceId == spaceId, ct)
+            ?? throw new NotFoundException("Group", groupId);
 
         group.Name = name;
         group.UpdatedAt = DateTime.UtcNow;
@@ -69,16 +93,20 @@ public class GroupService(CodeHappyContext context) : IGroupService
         await context.SaveChangesAsync(ct);
     }
 
-    // Deletes the group. Verifies ownership through the parent space.
-    public async Task DeleteGroupAsync(Guid groupId, Guid userId, CancellationToken ct)
+    // Deletes the group. Same route-scoping rule as the update.
+    public async Task DeleteGroupAsync(Guid spaceId, Guid groupId, Guid userId, CancellationToken ct)
     {
-        var group = await context.Groups
-            .Include(g => g.Space)
-            .FirstOrDefaultAsync(g => g.Id == groupId, ct)
-            ?? throw new NotFoundException("Group", groupId);
+        var space = await context.Spaces
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == spaceId, ct)
+            ?? throw new NotFoundException("Space", spaceId);
 
-        if (group.Space.OwnerId != userId)
+        if (space.OwnerId != userId)
             throw new ForbiddenException();
+
+        var group = await context.Groups
+            .FirstOrDefaultAsync(g => g.Id == groupId && g.SpaceId == spaceId, ct)
+            ?? throw new NotFoundException("Group", groupId);
 
         context.Groups.Remove(group);
         await context.SaveChangesAsync(ct);
@@ -111,6 +139,7 @@ public class GroupService(CodeHappyContext context) : IGroupService
     {
         return new GroupResponse(
             group.Id,
+            group.SpaceId,
             group.Name,
             group.Position,
             group.CreatedAt

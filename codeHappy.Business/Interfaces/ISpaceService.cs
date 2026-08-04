@@ -6,6 +6,8 @@ public interface ISpaceService
 {
 
     Task<SpaceResponse> CreateSpaceAsync(Guid userId, CreateSpaceRequest request, CancellationToken ct);
+
+    Task<SpaceResponse> GetSpaceAsync( Guid spaceId, Guid userId,CancellationToken ct);
     Task<IEnumerable<SpaceResponse>> GetAllSpacesAsync(Guid userId, CancellationToken ct);
     Task UpdateSpaceAsync(Guid spaceId, Guid userId, UpdateSpaceRequest request, CancellationToken ct);
     Task TouchSpaceAsync(Guid spaceId, Guid userId, CancellationToken ct);
