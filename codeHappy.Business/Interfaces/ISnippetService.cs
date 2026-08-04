@@ -5,7 +5,7 @@ namespace codeHappy.Business.Interfaces;
 
 public interface ISnippetService
 {
-    Task<PagedResponse<SnippetResponse>> GetAllSnippetAsync(Guid userId, SnippetParamsRequest req, CancellationToken ct);
+    Task<PagedResponse<SnippetSummaryResponse>> GetAllSnippetAsync(Guid userId, SnippetParamsRequest req, CancellationToken ct);
 
     Task<SnippetResponse> GetSnippetByIdAsync(Guid userId, Guid snippetId, CancellationToken ct);
 
@@ -13,10 +13,11 @@ public interface ISnippetService
 
     Task UpdateSnippetWithBlocksAsync(Guid snippetId, Guid userId, UpdateSnippetRequest req, CancellationToken ct);
 
-    Task ToggleFavorite(Guid snippetId, CancellationToken ct);
+    Task ToggleFavorite(Guid userId, Guid snippetId, CancellationToken ct);
 
-    Task RecordCopy(Guid snippetId, CancellationToken ct);
+    Task RecordCopy(Guid userId, Guid snippetId, CancellationToken ct);
 
     Task DeleteSnippetbyId(Guid userId, Guid snippetId, CancellationToken ct);
 
+    Task MoveSnippetAsync(Guid userId, Guid snippetId, MoveSnippetRequest req, CancellationToken ct);
 }

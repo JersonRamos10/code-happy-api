@@ -27,10 +27,12 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
         var snippet = new Snippet
         {
             Title = req.Title,
+            Description = req.Description,
             OwnerId = profile.Id,
             SpaceId = req.SpaceId,
             GroupId = req.GroupId,
             Visibility = req.Visibility,
+            Topics = req.Topics ?? [],
             Blocks = req.Blocks.Select((b, index) => new Block
             {
                 Content = b.Content,
@@ -79,7 +81,49 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
             await _imagesService.DestroyAssetBestEffortAsync(publicId, ct);
     }
 
-    public async Task<PagedResponse<SnippetResponse>> GetAllSnippetAsync(Guid userId, SnippetParamsRequest req, CancellationToken ct)
+    public async Task MoveSnippetAsync(Guid userId, Guid snippetId, MoveSnippetRequest req, CancellationToken ct)
+    {
+        var snippet = await _context.Snippets
+            .FindAsync([snippetId], ct)
+            ?? throw new NotFoundException("Snippet", snippetId);
+
+        if (snippet.OwnerId != userId)
+            throw new ForbiddenException();
+
+        if (req.SpaceId.HasValue)
+        {
+            var space = await _context.Spaces
+                .FindAsync([req.SpaceId.Value], ct)
+                ?? throw new NotFoundException("Space", req.SpaceId.Value);
+
+            if (space.OwnerId != userId)
+                throw new ForbiddenException();
+        }
+
+        if (req.GroupId.HasValue)
+        {
+            var group = await _context.Groups
+                .FindAsync([req.GroupId.Value], ct)
+                ?? throw new NotFoundException("Group", req.GroupId.Value);
+
+            if (group.SpaceId != req.SpaceId!.Value)
+                throw new NotFoundException("Group", req.GroupId.Value);
+        }
+
+        var targetSpaceId = req.SpaceId;
+        var targetGroupId = req.GroupId;
+
+        if (snippet.SpaceId == targetSpaceId && snippet.GroupId == targetGroupId)
+            return;
+
+        snippet.SpaceId = targetSpaceId;
+        snippet.GroupId = targetGroupId;
+        snippet.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
+    }
+
+    public async Task<PagedResponse<SnippetSummaryResponse>> GetAllSnippetAsync(Guid userId, SnippetParamsRequest req, CancellationToken ct)
     {
         var profile = await _context.Profiles
                 .FindAsync([userId], ct)
@@ -87,7 +131,7 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
 
         var query = _context.Snippets.AsNoTracking().AsQueryable();
 
-        query = query.Where(s => s.OwnerId == userId || s.Visibility == SnippetVisibility.Public);
+        query = query.Where(s => s.OwnerId == userId);
 
         if (req.GroupId.HasValue)
             query = query.Where(s => s.GroupId == req.GroupId);
@@ -108,18 +152,19 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
 
         int totalPages = (int)Math.Ceiling((double)totalItems / req.PageSize);
 
-        return new PagedResponse<SnippetResponse>(
-            items.Select(MapToResponse).ToList(),
-            totalItems,
-            totalPages,
+        return new PagedResponse<SnippetSummaryResponse>(
+            items.Select(MapToSummaryResponse).ToList(),
             req.PageNumber,
-            req.PageSize
+            req.PageSize,
+            totalItems,
+            totalPages
         );
     }
 
     public async Task<SnippetResponse> GetSnippetByIdAsync(Guid userId, Guid snippetId, CancellationToken ct)
     {
         var snippet = await _context.Snippets
+            .Include(s => s.Blocks.OrderBy(b => b.Position))
             .FirstOrDefaultAsync(s => s.Id == snippetId, ct)
             ?? throw new NotFoundException("Snippet", snippetId);
 
@@ -139,9 +184,12 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
     public async Task UpdateSnippetWithBlocksAsync(Guid snippetId, Guid userId, UpdateSnippetRequest req, CancellationToken ct)
     {
         var snippet = await _context.Snippets
-            .Include(s => s.Blocks)
-            .FirstOrDefaultAsync(s => s.Id == snippetId, ct)
+                          .Include(s => s.Blocks)
+                          .Include(snippet => snippet.Shares)
+                          .FirstOrDefaultAsync(s => s.Id == snippetId, ct)
             ?? throw new NotFoundException("Snippet", snippetId);
+
+
 
         if (snippet.OwnerId != userId)
             throw new ForbiddenException();
@@ -151,7 +199,11 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
         snippet.Visibility = req.Visibility;
         snippet.GroupId = req.GroupId;
         snippet.SpaceId = req.SpaceId;
+        snippet.Topics = req.Topics ?? [];
         snippet.UpdatedAt = DateTime.UtcNow;
+
+        if (snippet.Visibility ==  SnippetVisibility.Private)
+            _context.Shares.RemoveRange(snippet.Shares);
 
         var incomingPublicIds = req.Blocks
             .Where(b => b.Type == BlockType.Image && b.PublicId is not null)
@@ -165,8 +217,9 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
 
         _context.Blocks.RemoveRange(snippet.Blocks);
 
-        snippet.Blocks = req.Blocks.Select((b, index) => new Block
+        var replacementBlocks = req.Blocks.Select((b, index) => new Block
         {
+            SnippetId = snippet.Id,
             Content = b.Content,
             Title = b.Title,
             Type = b.Type,
@@ -183,32 +236,61 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
             }
         }).ToList();
 
+        await _context.Blocks.AddRangeAsync(replacementBlocks, ct);
+
         await _context.SaveChangesAsync(ct);
 
         foreach (var publicId in publicIdsToDestroy)
             await _imagesService.DestroyAssetBestEffortAsync(publicId, ct);
     }
-    public async Task RecordCopy(Guid snippetId, CancellationToken ct)
+
+    // Records a copy. Allowed for the owner and for any user on a public snippet,
+    // mirroring the read access rule of GetSnippetByIdAsync.
+    public async Task RecordCopy(Guid userId, Guid snippetId, CancellationToken ct)
     {
         var snippet = await _context.Snippets
             .FindAsync([snippetId], ct)
             ?? throw new NotFoundException("Snippet", snippetId);
+
+        if (snippet.OwnerId != userId && snippet.Visibility != SnippetVisibility.Public)
+            throw new ForbiddenException();
 
         snippet.CopyCount++;
 
         await _context.SaveChangesAsync(ct);
     }
 
-    // Toggles the favorite state of a snippet.
-    public async Task ToggleFavorite(Guid snippetId, CancellationToken ct)
+    // Toggles the favorite state of a snippet. Restricted to the owner.
+    public async Task ToggleFavorite(Guid userId, Guid snippetId, CancellationToken ct)
     {
         var snippet = await _context.Snippets
             .FindAsync([snippetId], ct)
             ?? throw new NotFoundException("Snippet", snippetId);
 
+        if (snippet.OwnerId != userId)
+            throw new ForbiddenException();
+
         snippet.IsFavorite = !snippet.IsFavorite;
 
         await _context.SaveChangesAsync(ct);
+    }
+
+    private static SnippetSummaryResponse MapToSummaryResponse(Snippet snippet)
+    {
+        return new SnippetSummaryResponse(
+            snippet.Id,
+            snippet.Title,
+            snippet.Description,
+            snippet.Visibility,
+            snippet.IsFavorite,
+            snippet.ViewCount,
+            snippet.CopyCount,
+            snippet.CreatedAt,
+            snippet.UpdatedAt,
+            snippet.Topics?.ToList(),
+            snippet.SpaceId,
+            snippet.GroupId
+        );
     }
 
     private static SnippetResponse MapToResponse(Snippet snippet)
@@ -218,6 +300,11 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
             snippet.Title,
             snippet.Description,
             snippet.Visibility,
+            snippet.IsFavorite,
+            snippet.ViewCount,
+            snippet.CopyCount,
+            snippet.CreatedAt,
+            snippet.UpdatedAt,
             snippet.Topics?.ToList(),
             snippet.Blocks.Select(MapToBlockResponse).ToList(),
             snippet.SpaceId,

@@ -49,6 +49,23 @@ public static class SpaceEndpoints
             return Results.Ok(spaces);
         });
 
+        //GET /spaces/{id}
+
+        group.MapGet("/{id}", async (Guid id,
+            ISpaceService service,
+            ICurrentUserService current,
+            CancellationToken ct) =>
+        {
+            var userId = current.GetUserId();
+
+            if(!Guid.TryParse(userId , out  var guidUserId))
+                return Results.Unauthorized();
+
+            var space = await service.GetSpaceAsync(id, guidUserId, ct);
+
+            return Results.Ok(space);
+        });
+
         // DELETE /spaces/{id} — deletes the space. Returns 403 if the user is not the owner.
         group.MapDelete("/{id}", async (Guid id, ISpaceService service, ICurrentUserService current, CancellationToken ct) =>
         {

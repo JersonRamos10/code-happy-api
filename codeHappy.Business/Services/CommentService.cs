@@ -57,6 +57,7 @@ public class CommentService(CodeHappyContext context) : ICommentService
                 new UserProfileResponse(
                     c.Profile.Id,
                     c.Profile.UserName,
+                    c.Profile.DisplayName,
                     c.Profile.Email,
                     c.Profile.AvatarUrl) 
                 ))
@@ -145,6 +146,7 @@ public class CommentService(CodeHappyContext context) : ICommentService
         return new UserProfileResponse(
             profile!.Id,
             profile.UserName,
+            profile.DisplayName,
             profile.Email,
             profile.AvatarUrl
         );

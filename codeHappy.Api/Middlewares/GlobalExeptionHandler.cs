@@ -1,3 +1,4 @@
+using System.Text.Json;
 using codeHappy.Business.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,8 @@ public class GlobalExceptionHandler : IExceptionHandler
             ForbiddenException => StatusCodes.Status403Forbidden,
             BadRequestException => StatusCodes.Status400BadRequest,
             ExternalServiceException => StatusCodes.Status502BadGateway,
+            BadHttpRequestException badRequest => badRequest.StatusCode,
+            JsonException => StatusCodes.Status400BadRequest,
             _ => StatusCodes.Status500InternalServerError
         };
 

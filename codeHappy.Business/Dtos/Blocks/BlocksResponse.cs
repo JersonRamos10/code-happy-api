@@ -13,5 +13,5 @@ public record BlocksResponse(
     int Position,
     ImageMetadataResponse? ImageMetadata,
     DateTime CreatedAt,
-    DateTime UpdateAt
+    DateTime UpdatedAt
 );

@@ -23,19 +23,41 @@ public static class GroupEndpoints
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            var groups = await service.GetAllGroupsAsync(spaceId, Guid.Parse(userId), ct);
+            var group = await service.GetAllGroupsAsync(spaceId, Guid.Parse(userId), ct);
 
-            return Results.Ok(groups);
+            return Results.Ok(group);
+        });
+
+        // GET /spaces/{spaceId}/groups/{id}: returns one group only within the requested space.
+        groups.MapGet("/{id}", async (
+            Guid spaceId,
+            Guid id,
+            ICurrentUserService current,
+            IGroupService service,
+            CancellationToken ct) =>
+        {
+            if (!Guid.TryParse(current.GetUserId(), out var userId))
+                return Results.Unauthorized();
+
+            var group = await service.GetGroupAsync(spaceId, id, userId, ct);
+
+            return Results.Ok(group);
         });
 
         // POST /spaces/{spaceId}/groups — creates a group. Position is calculated automatically.
         groups.MapPost("/", async (
             Guid spaceId,
             CreateGroupRequest request,
+            IValidator<CreateGroupRequest> validator,
             IGroupService service,
             ICurrentUserService current,
             CancellationToken ct) =>
         {
+            var result = await validator.ValidateAsync(request, ct);
+
+            if (!result.IsValid)
+                return Results.ValidationProblem(result.ToDictionary());
+
             var userId = current.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
@@ -51,16 +73,24 @@ public static class GroupEndpoints
             Guid spaceId,
             Guid id,
             UpdateGroupRequest request,
+            IValidator<UpdateGroupRequest> validator,
             IGroupService service,
             ICurrentUserService current,
             CancellationToken ct) =>
         {
+
+            var result = await validator.ValidateAsync(request, ct);
+
+            if (!result.IsValid)
+                return Results.ValidationProblem(result.ToDictionary());
+
+
             var userId = current.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            await service.UpdateGroupAsync(id, Guid.Parse(userId), request.Name, ct);
+            await service.UpdateGroupAsync(spaceId, id, Guid.Parse(userId), request.Name, ct);
 
             return Results.NoContent();
         });
@@ -78,7 +108,7 @@ public static class GroupEndpoints
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            await service.DeleteGroupAsync(id, Guid.Parse(userId), ct);
+            await service.DeleteGroupAsync(spaceId, id, Guid.Parse(userId), ct);
 
             return Results.NoContent();
         });

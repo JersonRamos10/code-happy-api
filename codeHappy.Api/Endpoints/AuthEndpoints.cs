@@ -1,9 +1,12 @@
 using System.Security.Claims;
 using codeHappy.Business.Dtos;
+using codeHappy.Business.Dtos.Profile;
 using codeHappy.Business.Interfaces;
 using codeHappy.Data.Context;
 using codeHappy.Data.Models;
+using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Mvc;
 
 namespace codeHappy.Api.Endpoints;
 
@@ -15,21 +18,30 @@ public static class AuthEndpoints
 
 
         // POST /auth/sync — syncs the Supabase JWT claims into the local profiles table. Creates the profile if it doesn't exist.
-        group.MapPost("/sync", async (ICurrentUserService current, IProfileService profileService, CancellationToken ct) =>
+        group.MapPost("/sync", async (
+            ICurrentUserService current,
+            [FromBody] SyncProfileRequest request,
+            IValidator<SyncProfileRequest> validator,
+            IProfileService profileService,
+            CancellationToken ct) =>
         {
             var userId = current.GetUserId();
             var email = current.GetEmail();
-            var userName = current.GetUserName();
-            var displayName = current.GetDisplayName();
 
+            var result = await validator.ValidateAsync(request, ct);
+
+
+            if(!result.IsValid)
+                return Results.ValidationProblem(result.ToDictionary());
 
             if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(email)
-                || string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(displayName))
+                || string.IsNullOrEmpty(request.UserName) || string.IsNullOrEmpty(request.DisplayName))
                 return Results.Unauthorized();
 
-            var guidUserId = Guid.Parse(userId);
+            if(!Guid.TryParse(userId , out  var guidUserId))
+                    return Results.Unauthorized();
 
-            await profileService.SyncProfileAsync(guidUserId, email, userName, displayName, ct);
+            await profileService.SyncProfileAsync(guidUserId, email, request.UserName, request.DisplayName, ct);
 
             var profile = await profileService.GetUserbyIdAsync(guidUserId, ct);
 

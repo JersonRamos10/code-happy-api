@@ -23,6 +23,7 @@ public class ProfileService : IProfileService
         return new UserProfileResponse(
             profile.Id,
             profile.UserName,
+            profile.DisplayName,
             profile.Email,
             profile.AvatarUrl
         );
@@ -32,6 +33,7 @@ public class ProfileService : IProfileService
     public async Task SyncProfileAsync(Guid userId, string email, string userName, string displayName, CancellationToken ct)
     {
         var profileExist = await _context.Profiles.FindAsync([userId], ct);
+
 
         if (profileExist is null)
         {
@@ -46,5 +48,14 @@ public class ProfileService : IProfileService
             await _context.Profiles.AddAsync(profile, ct);
             await _context.SaveChangesAsync(ct);
         }
+        else
+        {
+            profileExist.UserName = userName;
+            profileExist.Email = email;
+            profileExist.DisplayName = displayName;
+            profileExist.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync(ct);
     }
 }
