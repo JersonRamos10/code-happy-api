@@ -76,9 +76,7 @@ public class ShareService(CodeHappyContext context) : IShareService
         if (share.ExpiresAt.HasValue && share.ExpiresAt < DateTime.UtcNow)
             throw new NotFoundException("share", shareId);
 
-        // The "no sharing private snippets" rule is enforced when the link is issued; re-check it
-        // here so a snippet turned back to Private stops being served through an older link.
-        // Treated as not found, like an expired share, to avoid leaking that the link ever existed.
+        // Re-checked on read so a snippet turned back to Private stops serving older links.
         if (share.Snippet.Visibility == SnippetVisibility.Private)
             throw new NotFoundException("share", shareId);
 

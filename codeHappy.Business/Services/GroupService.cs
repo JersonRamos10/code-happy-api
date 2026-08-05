@@ -71,8 +71,7 @@ public class GroupService(CodeHappyContext context) : IGroupService
         return MapToResponse(group);
     }
 
-    // Renames the group. Validates the route's space first and then scopes the group
-    // to it, so a crossed or non-existent spaceId cannot reach someone else's group.
+    // Renames the group. Scoped by the route's space so a crossed spaceId cannot reach it.
     public async Task UpdateGroupAsync(Guid spaceId, Guid groupId, Guid userId, string name, CancellationToken ct)
     {
         var space = await context.Spaces
