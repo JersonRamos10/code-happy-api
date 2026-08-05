@@ -244,8 +244,7 @@ public class SnippetService(CodeHappyContext context, IImagesService imagesServi
             await _imagesService.DestroyAssetBestEffortAsync(publicId, ct);
     }
 
-    // Records a copy. Allowed for the owner and for any user on a public snippet,
-    // mirroring the read access rule of GetSnippetByIdAsync.
+    // Copy follows the same access rule as reading: owner, or anyone on a public snippet.
     public async Task RecordCopy(Guid userId, Guid snippetId, CancellationToken ct)
     {
         var snippet = await _context.Snippets
